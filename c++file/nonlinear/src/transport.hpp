@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Ham_TMD.hpp"
+#include "Ham_Dirac.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -22,3 +22,5 @@ void Linear_transport_NH_NRC(double dw, double w,double T,Ham Ham_, double& XX, 
 void Opt_transport(parm parm_, double dw, double w,Ham Ham_,Green Green_,double& XX,double& XX2, double& PVYXi, double& div1, double& div2, double& div3);
 void Opt_RTA_transport_BI(parm parm_,Ham Ham_,double& DrudeL_ ,double& Drude_, double& BCD_, double& Inj_);
 void Opt_RTA_transport_BI2(parm parm_,Ham Ham_,double& DrudeL_ ,double& Drude_, double& BCD_, double& Inj_);
+void Opt_RTA_transport_BI3(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], double Inj_[3]);
+void Opt_Green_transport_BI(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], double Inj_[3] ,double Inj2_[3]);

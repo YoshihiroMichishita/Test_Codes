@@ -272,6 +272,7 @@ void Opt_RTA_transport_BI(parm parm_,Ham Ham_,double& DrudeL_ ,double& Drude_, d
             else{
                 DrudeL += Ham_.VX_LR[i*M+j] * Ham_.VX_LR[j*M+i] * (FD(Ham_.EN[i],parm_.T)-FD(Ham_.EN[j],parm_.T)) /(-I*(parm_.W+Ham_.EN[i]-Ham_.EN[j]) + parm_.delta)/(Ham_.EN[i]-Ham_.EN[j]+I* parm_.delta *parm_.W_MAX );
                 Drude += 4.0 * Ham_.VY_LR[i*(M+1)]*Ham_.VX_LR[i*M+j]*Ham_.VX_LR[j*M+i]/(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)* dFD(Ham_.EN[i],parm_.T)/(-parm_.W*parm_.W-parm_.delta*parm_.delta);
+
                 Inj += 4.0 * (Ham_.VY_LR[i*(M+1)]-Ham_.VY_LR[j*(M+1)])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX))*Ham_.VX_LR[i*M+j]*Ham_.VX_LR[j*M+i]
                     *(FD(Ham_.EN[i],parm_.T)-FD(Ham_.EN[j],parm_.T))/((parm_.W+Ham_.EN[i]-Ham_.EN[j])*(parm_.W+Ham_.EN[i]-Ham_.EN[j])+parm_.delta*parm_.delta);
                 
@@ -317,6 +318,98 @@ void Opt_RTA_transport_BI2(parm parm_,Ham Ham_,double& DrudeL_ ,double& Drude_, 
     Drude_ += real(Drude);
     BCD_ += real(BCD);
     Inj_ += real(Inj);
+};
+
+void Opt_RTA_transport_BI3(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], double Inj_[3]){
+    
+    Complex DrudeL = 0;
+    Complex Inj[3]={0,0,0};
+    Complex BCD[3] ={0,0,0};
+    Complex BC[3][2];
+    for (int i = 0; i < M; i++){
+        DrudeL += Ham_.VX_LR[i*(M+1)] * Ham_.VX_LR[i*(M+1)] * (-dFD(Ham_.EN[i],parm_.T)) /(-I*parm_.W + parm_.delta);
+        
+        for (int j = 0; j < M; j++){
+            if(i==j){
+            }
+            else{
+                DrudeL += Ham_.VX_LR[i*M+j] * Ham_.VX_LR[j*M+i] * (FD(Ham_.EN[i],parm_.T)-FD(Ham_.EN[j],parm_.T)) /(-I*(parm_.W+Ham_.EN[i]-Ham_.EN[j]) + parm_.delta)/(Ham_.EN[i]-Ham_.EN[j]+I* parm_.delta *parm_.W_MAX );
+                
+                Inj[2] += 4.0 * (Ham_.VZ_LR[i*(M+1)]-Ham_.VZ_LR[j*(M+1)])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX))*Ham_.VX_LR[i*M+j]*Ham_.VY_LR[j*M+i]
+                    *(FD(Ham_.EN[i],parm_.T)-FD(Ham_.EN[j],parm_.T))/((parm_.W+Ham_.EN[i]-Ham_.EN[j])*(parm_.W+Ham_.EN[i]-Ham_.EN[j])+parm_.delta*parm_.delta);
+
+                Inj[0] += 4.0 * (Ham_.VX_LR[i*(M+1)]-Ham_.VX_LR[j*(M+1)])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX))*Ham_.VY_LR[i*M+j]*Ham_.VZ_LR[j*M+i]
+                    *(FD(Ham_.EN[i],parm_.T)-FD(Ham_.EN[j],parm_.T))/((parm_.W+Ham_.EN[i]-Ham_.EN[j])*(parm_.W+Ham_.EN[i]-Ham_.EN[j])+parm_.delta*parm_.delta);
+
+                Inj[1] += 4.0 * (Ham_.VY_LR[i*(M+1)]-Ham_.VY_LR[j*(M+1)])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX))*Ham_.VZ_LR[i*M+j]*Ham_.VX_LR[j*M+i]
+                    *(FD(Ham_.EN[i],parm_.T)-FD(Ham_.EN[j],parm_.T))/((parm_.W+Ham_.EN[i]-Ham_.EN[j])*(parm_.W+Ham_.EN[i]-Ham_.EN[j])+parm_.delta*parm_.delta);
+                
+                BC[2][i] += (Ham_.VY_LR[i*M+j]*Ham_.VX_LR[j*M+i]-Ham_.VX_LR[i*M+j]*Ham_.VY_LR[j*M+i])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX));
+                BC[0][i] += (Ham_.VZ_LR[i*M+j]*Ham_.VY_LR[j*M+i]-Ham_.VY_LR[i*M+j]*Ham_.VZ_LR[j*M+i])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX));
+                BC[1][i] += (Ham_.VX_LR[i*M+j]*Ham_.VZ_LR[j*M+i]-Ham_.VZ_LR[i*M+j]*Ham_.VX_LR[j*M+i])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX));
+            }
+        }
+        BCD[0] += -2.0 * I * parm_.delta * BC[0][i] *(Ham_.VX_LR[i*(M+1)] * dFD(Ham_.EN[i],parm_.T))/ (-parm_.W*parm_.W-parm_.delta*parm_.delta);
+        BCD[1] += -2.0 * I * parm_.delta * BC[1][i] *(Ham_.VY_LR[i*(M+1)] * dFD(Ham_.EN[i],parm_.T))/ (-parm_.W*parm_.W-parm_.delta*parm_.delta);
+        BCD[2] += -2.0 * I * parm_.delta * BC[2][i] *(Ham_.VZ_LR[i*(M+1)] * dFD(Ham_.EN[i],parm_.T))/ (-parm_.W*parm_.W-parm_.delta*parm_.delta);
+    }
+
+    DrudeL_ += real(DrudeL);
+
+    for (int i = 0; i < 3; i++){
+        Inj_[i] += real(Inj[i]);
+        BCD_[i] += real(BCD[i]);
+    }
+
+};
+
+void Opt_Green_transport_BI(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], double Inj_[3] ,double Inj2_[3]){
+    
+    double dw = 2*parm_.W_MAX/parm_.W_SIZE;
+    for (int ww = 0; ww < parm_.W_SIZE; ww++){
+        double w = parm_.W_MAX * (ww -parm_.W_SIZE/2) * 2.0/parm_.W_SIZE;
+        Complex Drude = 0;
+        Complex DrudeL = 0;
+        Complex Inj[3]={0,0,0};
+        Complex Inj2[3]={0,0,0};
+        Complex BCD[3] ={0,0,0};
+        for (int i = 0; i < M; i++){
+            DrudeL += Ham_.VX_LR[i*(M+1)]/((w -Ham_.EN[i])*(w -Ham_.EN[i])- (parm_.W+I*parm_.delta)*(parm_.W+I*parm_.delta))* Ham_.VX_LR[i*(M+1)]*(1.0/(w -Ham_.EN[i]+I*parm_.delta)-1.0/(w -Ham_.EN[i]-I*parm_.delta))* FD(w,parm_.T);
+
+            //Drude += 4.0* (Ham_.VY_LR[i*(M+1)]*Ham_.VX_LR[i*(M+1)]*Ham_.VX_LR[i*(M+1)]* ddFD(Ham_.EN[i],parm_.T) )/(-parm_.W*parm_.W-parm_.delta*parm_.delta);
+
+            for (int j = 0; j < M; j++){
+                if(i==j){
+                }
+                else{                    
+                    Inj[2] += 4.0 * Ham_.VZ_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] * FD(w,parm_.T) *(2.0*(1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta)) /(w-Ham_.EN[i]+I*parm_.delta) / (w + parm_.W -Ham_.EN[j] + I*parm_.delta) + (1.0/(w-Ham_.EN[j]+I*parm_.delta)-1.0/(w-Ham_.EN[j]-I*parm_.delta)) /(w-parm_.W-Ham_.EN[i]+I*parm_.delta) / (w - parm_.W -Ham_.EN[j] - I*parm_.delta) )/(-parm_.W*parm_.W);
+
+                    Inj[1] += 4.0 * Ham_.VY_LR[i*(M+1)] * Ham_.VZ_LR[i*M+j] * Ham_.VX_LR[j*M+i] * FD(w,parm_.T) *(2.0*(1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta)) /(w-Ham_.EN[i]+I*parm_.delta) / (w + parm_.W -Ham_.EN[j] + I*parm_.delta) + (1.0/(w-Ham_.EN[j]+I*parm_.delta)-1.0/(w-Ham_.EN[j]-I*parm_.delta)) /(w-parm_.W-Ham_.EN[i]+I*parm_.delta) / (w - parm_.W -Ham_.EN[j] - I*parm_.delta) )/(-parm_.W*parm_.W);
+
+                    Inj[0] += 4.0 * Ham_.VX_LR[i*(M+1)] * Ham_.VY_LR[i*M+j] * Ham_.VZ_LR[j*M+i] * FD(w,parm_.T) *(2.0*(1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta)) /(w-Ham_.EN[i]+I*parm_.delta) / (w + parm_.W -Ham_.EN[j] + I*parm_.delta) + (1.0/(w-Ham_.EN[j]+I*parm_.delta)-1.0/(w-Ham_.EN[j]-I*parm_.delta)) /(w-parm_.W-Ham_.EN[i]+I*parm_.delta) / (w - parm_.W -Ham_.EN[j] - I*parm_.delta) )/(-parm_.W*parm_.W);
+
+                    Inj2[2] += 2.0 * Ham_.VZ_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] * FD(w,parm_.T) *2.0*(1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta)) / (w-Ham_.EN[i]+I*parm_.delta)/(Ham_.EN[j]-Ham_.EN[i]+I*parm_.delta) / (-parm_.W*parm_.W);
+
+                    Inj2[0] += 2.0 * Ham_.VY_LR[i*(M+1)] * Ham_.VZ_LR[i*M+j] * Ham_.VX_LR[j*M+i] * FD(w,parm_.T) *2.0*(1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta)) / (w-Ham_.EN[i]+I*parm_.delta)/(Ham_.EN[j]-Ham_.EN[i]+I*parm_.delta) / (-parm_.W*parm_.W);
+
+                    Inj2[1] += 2.0 * Ham_.VX_LR[i*(M+1)] * Ham_.VY_LR[i*M+j] * Ham_.VZ_LR[j*M+i] * FD(w,parm_.T) *2.0*(1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta)) / (w-Ham_.EN[i]+I*parm_.delta)/(Ham_.EN[j]-Ham_.EN[i]+I*parm_.delta) / (-parm_.W*parm_.W);
+
+                    BCD[0] += (Ham_.VY_LR[i*M+j]*Ham_.VX_LR[j*M+i]-Ham_.VX_LR[i*M+j]*Ham_.VY_LR[j*M+i])*Ham_.VX_LR[i*(M+1)] * FD(w,parm_.T) *((1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta))*(1.0/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[j] + I*parm_.delta) + 1.0/(w-parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-parm_.W-Ham_.EN[j] + I*parm_.delta) )+ (1.0/(w-Ham_.EN[j]+I*parm_.delta)-1.0/(w-Ham_.EN[j]-I*parm_.delta))/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[i]-I*parm_.delta) );
+                    
+                    BCD[1] += (Ham_.VX_LR[i*M+j]*Ham_.VY_LR[j*M+i]-Ham_.VY_LR[i*M+j]*Ham_.VX_LR[j*M+i])*Ham_.VY_LR[i*(M+1)] * FD(w,parm_.T) *((1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta))*(1.0/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[j] + I*parm_.delta) + 1.0/(w-parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-parm_.W-Ham_.EN[j] + I*parm_.delta) )+ (1.0/(w-Ham_.EN[j]+I*parm_.delta)-1.0/(w-Ham_.EN[j]-I*parm_.delta))/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[i]-I*parm_.delta) );
+
+                    BCD[2] += (Ham_.VZ_LR[i*M+j]*Ham_.VX_LR[j*M+i]-Ham_.VX_LR[i*M+j]*Ham_.VZ_LR[j*M+i])*Ham_.VZ_LR[i*(M+1)] * FD(w,parm_.T) *((1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta))*(1.0/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[j] + I*parm_.delta) + 1.0/(w-parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-parm_.W-Ham_.EN[j] + I*parm_.delta) )+ (1.0/(w-Ham_.EN[j]+I*parm_.delta)-1.0/(w-Ham_.EN[j]-I*parm_.delta))/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[i]-I*parm_.delta) );
+                }
+            }
+        }
+
+        //DrudeL_ += dw * real(DrudeL)/(2.0*pi);
+        for (int i = 0; i < 3; i++){
+            Inj_[i] += dw * imag(Inj[i])/(2.0*pi);
+            Inj2_[i] += dw * imag(Inj2[i])/(2.0*pi);
+            BCD_[i] += dw * imag(BCD[i])/(2.0*pi);
+        }
+    } 
 };
 
 
