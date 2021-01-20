@@ -335,13 +335,13 @@ void Opt_RTA_transport_BI3(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], 
             else{
                 DrudeL += Ham_.VX_LR[i*M+j] * Ham_.VX_LR[j*M+i] * (FD(Ham_.EN[i],parm_.T)-FD(Ham_.EN[j],parm_.T)) /(-I*(parm_.W+Ham_.EN[i]-Ham_.EN[j]) + parm_.delta)/(Ham_.EN[i]-Ham_.EN[j]+I* parm_.delta *parm_.W_MAX );
                 
-                Inj[2] += 4.0 * (Ham_.VZ_LR[i*(M+1)]-Ham_.VZ_LR[j*(M+1)])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX))*Ham_.VX_LR[i*M+j]*Ham_.VY_LR[j*M+i]
+                Inj[2] += 4.0 * (Ham_.VZ_LR[i*(M+1)]-Ham_.VZ_LR[j*(M+1)])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX))*(Ham_.VX_LR[i*M+j]*Ham_.VY_LR[j*M+i]-Ham_.VY_LR[i*M+j]*Ham_.VX_LR[j*M+i])
                     *(FD(Ham_.EN[i],parm_.T)-FD(Ham_.EN[j],parm_.T))/((parm_.W+Ham_.EN[i]-Ham_.EN[j])*(parm_.W+Ham_.EN[i]-Ham_.EN[j])+parm_.delta*parm_.delta);
 
-                Inj[0] += 4.0 * (Ham_.VX_LR[i*(M+1)]-Ham_.VX_LR[j*(M+1)])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX))*Ham_.VY_LR[i*M+j]*Ham_.VZ_LR[j*M+i]
+                Inj[0] += 4.0 * (Ham_.VX_LR[i*(M+1)]-Ham_.VX_LR[j*(M+1)])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX))*(Ham_.VY_LR[i*M+j]*Ham_.VZ_LR[j*M+i]-Ham_.VZ_LR[i*M+j]*Ham_.VY_LR[j*M+i])
                     *(FD(Ham_.EN[i],parm_.T)-FD(Ham_.EN[j],parm_.T))/((parm_.W+Ham_.EN[i]-Ham_.EN[j])*(parm_.W+Ham_.EN[i]-Ham_.EN[j])+parm_.delta*parm_.delta);
 
-                Inj[1] += 4.0 * (Ham_.VY_LR[i*(M+1)]-Ham_.VY_LR[j*(M+1)])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX))*Ham_.VZ_LR[i*M+j]*Ham_.VX_LR[j*M+i]
+                Inj[1] += 4.0 * (Ham_.VY_LR[i*(M+1)]-Ham_.VY_LR[j*(M+1)])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX))*(Ham_.VZ_LR[i*M+j]*Ham_.VX_LR[j*M+i]-Ham_.VX_LR[i*M+j]*Ham_.VZ_LR[j*M+i])
                     *(FD(Ham_.EN[i],parm_.T)-FD(Ham_.EN[j],parm_.T))/((parm_.W+Ham_.EN[i]-Ham_.EN[j])*(parm_.W+Ham_.EN[i]-Ham_.EN[j])+parm_.delta*parm_.delta);
                 
                 BC[2][i] += (Ham_.VY_LR[i*M+j]*Ham_.VX_LR[j*M+i]-Ham_.VX_LR[i*M+j]*Ham_.VY_LR[j*M+i])/((Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta)*(Ham_.EN[i]-Ham_.EN[j]+I*parm_.delta*parm_.W_MAX));
