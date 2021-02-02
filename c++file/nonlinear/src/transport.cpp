@@ -93,6 +93,7 @@ void Linear_transport_NH(double dw, double w,double T,Ham Ham_, double& XX, doub
 
         for (int j = 0; j < M; j++){
             for (int l = 0; l < M; l++){
+                //all contribution
                 YX += -2.0 * dw * imag(Ham_.VY_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LL[l*M+j] * GA[j]) * dFD(w,T);
                 YX_ += -2.0 * dw * imag((Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
                 * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LR[l*M+j] * (Ham_.VL_b[M*j]*Ham_.VL_k[j] + Ham_.VL_b[M*j+1]*Ham_.VL_k[M+j]) * GA[j]) * dFD(w,T);
@@ -115,6 +116,65 @@ void Linear_transport_NH(double dw, double w,double T,Ham Ham_, double& XX, doub
     YXXr2 += real(YXX1);
     YXXi2_ += imag(YXX1_);
     YXXr2_ += real(YXX1_);
+};
+
+
+void Linear_transport_NHwithNRC(double dw, double w,double T,Ham Ham_, double& XX, double& XXX, double& YXXr, double& YXXr2, double& YXXi,
+ double& YXXi2, double& XX_, double& XXX_, double& YXXr_, double& YXXr2_, double& YXXi_, double& YXXi2_){
+    
+    Complex GR[M],GA[M];
+    for (int i = 0; i < M; i++){
+        GR[i] = 1.0/(w - Ham_.E_NH[i]);
+        GA[i] = conj(GR[i]);
+    }
+    Complex YXX0=0,YXX0_=0,YXX1=0,YXX1_=0;
+    Complex XXX0=0,XXX0_=0,XXX1=0,XXX1_=0,XXX2=0,XXX2_=0;
+
+    for (int i = 0; i < M; i++){
+        XX += dw * real(Ham_.VX_RR[i*(M+1)] * GR[i] * Ham_.VX_LL[i*(M+1)] * GA[i]) * dFD(w,T);
+        XX_ += dw * real( (Ham_.VR_b[M*i]*Ham_.VR_k[i] + Ham_.VR_b[M*i+1]*Ham_.VR_k[i+M]) * Ham_.VX_LR[i*(M+1)] * GR[i] * Ham_.VX_LR[i*(M+1)] * (Ham_.VL_b[M*i]*Ham_.VL_k[i] + Ham_.VL_b[M*i+1]*Ham_.VL_k[i+M]) * GA[i]) * dFD(w,T);
+
+        for (int j = 0; j < M; j++){
+
+            XXX0 += dw * Ham_.VX_RR[i+j*M] * GR[i] * GR[i] * Ham_.VX_LR[j+M*i] * GR[j] * Ham_.VX_LL[j*(M+1)] * GA[j] * dFD(w,T);
+            XXX0_ += dw * (Ham_.VR_b[j*M]*Ham_.VR_k[j] + Ham_.VR_b[j*M+1]*Ham_.VR_k[j+M]) * Ham_.VX_LR[i+j*M] * GR[i] * GR[i] * Ham_.VX_LR[j+M*i] * GR[j] * Ham_.VX_LR[j*(M+1)] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
+            
+            XXX1 += dw * Ham_.VX_RR[i+j*M] * GR[i] * GR[i] * Ham_.VXX_LL[j+M*i] * GA[j] * dFD(w,T);
+            XXX1_ += dw * (Ham_.VR_b[j*M]*Ham_.VR_k[j] + Ham_.VR_b[j*M+1]*Ham_.VR_k[j+M]) * Ham_.VX_LR[i+j*M] * GR[i] * GR[i] * Ham_.VXX_LR[j+M*i] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
+
+            for (int l = 0; l < M; l++){
+                //all contribution
+                if(j==l){
+
+                }
+                else{
+                    XXX2 += dw * Ham_.VX_RR[i+j*M] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LL[l*M+j] * GA[j] * dFD(w,T);
+                    XXX2_ += dw * (Ham_.VR_b[j*M]*Ham_.VR_k[j] + Ham_.VR_b[j*M+1]*Ham_.VR_k[j+M]) * Ham_.VX_LR[i+j*M] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LR[l*M+j] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
+                }
+                //YX += -2.0 * dw * imag(Ham_.VY_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LL[l*M+j] * GA[j]) * dFD(w,T);
+                //YX_ += -2.0 * dw * imag((Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
+                // * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LR[l*M+j] * (Ham_.VL_b[M*j]*Ham_.VL_k[j] + Ham_.VL_b[M*j+1]*Ham_.VL_k[M+j]) * GA[j]) * dFD(w,T);
+            }
+            YXX0 += -2.0*dw * Ham_.VY_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+j] * GR[j] * Ham_.VX_LL[j*(M+1)] * GA[j] * dFD(w,T);
+            YXX0_ += -2.0*dw * (Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
+                * Ham_.VX_LR[M*i+j] * GR[j] * Ham_.VX_LR[j*(M+1)] * (Ham_.VL_b[M*j]*Ham_.VL_k[j] + Ham_.VL_b[M*j+1]*Ham_.VL_k[M+j]) * GA[j] * dFD(w,T);
+            
+            YXX1 += -2.0*dw * Ham_.VY_RR[i+j*M] * GR[i] * GR[i] * Ham_.VXX_LL[j+M*i] * GA[j] * dFD(w,T);
+            YXX1_ += -2.0*dw * (Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
+             * Ham_.VXX_LR[M*i+j] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
+        }
+        
+    }
+    YXXi += imag(YXX0);
+    YXXr += real(YXX0);
+    YXXi_ += imag(YXX0_);
+    YXXr_ += real(YXX0_);
+    YXXi2 += imag(YXX1);
+    YXXr2 += real(YXX1);
+    YXXi2_ += imag(YXX1_);
+    YXXr2_ += real(YXX1_);
+    XXX += imag(XXX0+XXX1+XXX2);
+    XXX_ += imag(XXX0_+XXX1_+XXX2_);
 };
 
 void Linear_transport_NH_NRC(double dw, double w,double T,Ham Ham_, double& XX, double& XXX, double& XX_, double& XXX_){

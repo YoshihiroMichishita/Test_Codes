@@ -18,9 +18,11 @@ void H_mom(parm parm_, double k[D], Complex H[M*M]);
 void H_mom_BI(parm parm_, double k[D], Complex H[M*M], Complex VR_k[M*M], Complex VL_b[M*M],Complex E[M]);
 void BI_Velocity(Complex Vx[M*M],Complex Vy[M*M],Complex Vxx[M*M],Complex Vyx[M*M], Complex VR_k[M*M], Complex VL_b[M*M], Complex Vx_LR[M*M], Complex Vy_LR[M*M], Complex Vxx_LR[M*M], Complex Vyx_LR[M*M]);
 void H_mom_NH(parm parm_, double k[D], Complex H[M*M], Complex VR_k[M*M], Complex VR_b[M*M], Complex VL_k[M*M],Complex VL_b[M*M],Complex E_NH[M]);
-void NH_factor(Complex Vx[M*M],Complex Vxx[M*M], Complex VR_k[M*M], Complex VR_b[M*M], Complex VL_k[M*M],Complex VL_b[M*M]
-    , Complex Vx_LL[M*M], Complex Vx_RR[M*M], Complex Vx_LR[M*M],Complex Vxx_LL[M*M],Complex Vxx_LR[M*M], double NH_fac[M]);
+void NH_factor(Complex Vx[M*M],Complex Vy[M*M],Complex Vxx[M*M], Complex VR_k[M*M], Complex VR_b[M*M], Complex VL_k[M*M],Complex VL_b[M*M]
+    , Complex Vx_LL[M*M], Complex Vx_RR[M*M], Complex Vx_LR[M*M],Complex Vy_LL[M*M], Complex Vy_RR[M*M], Complex Vy_LR[M*M],Complex Vxx_LL[M*M]
+    ,Complex Vxx_LR[M*M], double NH_fac[M]);
 void Vx(parm parm_, double k[D], Complex H[M*M]);
+void Vy(parm parm_, double k[D], Complex H[M*M]);
 void Vxx(parm parm_, double k[D], Complex H[M*M]);
 void GreenR_mom(parm parm_, double w, double im[Mf], double re[Mf],Complex H[M*M], Complex G[M*M]);
 void dGreenR_mom(parm parm_, double w,double dw, double im[Mf], double re[Mf],Complex H[M*M], Complex G[M*M], Complex dG[M*M]);

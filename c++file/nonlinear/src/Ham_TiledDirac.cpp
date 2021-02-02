@@ -27,10 +27,10 @@ void H_mom_BI(parm parm_, double k[D], Complex H[M*M], Complex VR_k[M*M], Comple
     }
 };
 
-void BI_Velocity(Complex Vx[M*M],Complex Vy[M*M],Complex Vz[M*M], Complex VR_k[M*M], Complex VL_b[M*M], Complex Vx_LR[M*M], Complex Vy_LR[M*M], Complex Vz_LR[M*M]){
+void BI_Velocity(Complex Vx[M*M],Complex Vy[M*M],Complex Vxx[M*M], Complex VR_k[M*M], Complex VL_b[M*M], Complex Vx_LR[M*M], Complex Vy_LR[M*M], Complex Vxx_LR[M*M]){
     InPro_M<M>(VL_b,Vx,VR_k,Vx_LR);
     InPro_M<M>(VL_b,Vy,VR_k,Vy_LR);
-    //InPro_M<M>(VL_b,Vz,VR_k,Vz_LR);
+    InPro_M<M>(VL_b,Vxx,VR_k,Vxx_LR);
 };
 
 void H_mom_NH(parm parm_, double k[D], Complex H[M*M], Complex VR_k[M*M], Complex VR_b[M*M], Complex VL_k[M*M],Complex VL_b[M*M],Complex E_NH[M]){
@@ -67,22 +67,25 @@ void H_mom_NH(parm parm_, double k[D], Complex H[M*M], Complex VR_k[M*M], Comple
     }
 }
 
-void NH_factor(Complex Vx[M*M],Complex Vxx[M*M], Complex VR_k[M*M], Complex VR_b[M*M], Complex VL_k[M*M],Complex VL_b[M*M]
-    , Complex Vx_LL[M*M], Complex Vx_RR[M*M], Complex Vx_LR[M*M],Complex Vxx_LL[M*M],Complex Vxx_LR[M*M], double NH_fac[M]){
+void NH_factor(Complex Vx[M*M],Complex Vy[M*M],Complex Vxx[M*M], Complex VR_k[M*M], Complex VR_b[M*M], Complex VL_k[M*M],Complex VL_b[M*M]
+    , Complex Vx_LL[M*M], Complex Vx_RR[M*M], Complex Vx_LR[M*M],Complex Vy_LL[M*M], Complex Vy_RR[M*M], Complex Vy_LR[M*M],Complex Vxx_LL[M*M]
+    ,Complex Vxx_LR[M*M], double NH_fac[M]){
     
-    /*
+    
     InPro_M<M>(VL_b,Vx,VR_k,Vx_LR);
     InPro_M<M>(VR_b,Vx,VR_k,Vx_RR);
     InPro_M<M>(VL_b,Vx,VL_k,Vx_LL);
     InPro_M<M>(VR_b,Vy,VR_k,Vy_RR);
     InPro_M<M>(VL_b,Vy,VR_k,Vy_LR);
+    InPro_M<M>(VL_b,Vy,VL_k,Vy_LL);
     InPro_M<M>(VL_b,Vxx,VL_k,Vxx_LL);
-    InPro_M<M>(VL_b,Vxx,VR_k,Vxx_LR);*/
+    InPro_M<M>(VL_b,Vxx,VR_k,Vxx_LR);
+    /*
     Prod3<M>(VL_b,Vx,VR_k,Vx_LR);
     Prod3<M>(VR_b,Vx,VR_k,Vx_RR);
     Prod3<M>(VL_b,Vx,VL_k,Vx_LL);
     Prod3<M>(VL_b,Vxx,VL_k,Vxx_LL);
-    Prod3<M>(VL_b,Vxx,VR_k,Vxx_LR);
+    Prod3<M>(VL_b,Vxx,VR_k,Vxx_LR);*/
 
     for (int i = 0; i < M; i++){
         NH_fac[i] = real((VR_b[i*M]*VR_k[i] + VR_b[i*M+1]*VR_k[i+M]) * (VL_b[i*M]*VL_k[i] + VL_b[i*M+1]*VL_k[i+M]));
@@ -93,6 +96,13 @@ void NH_factor(Complex Vx[M*M],Complex Vxx[M*M], Complex VR_k[M*M], Complex VR_b
 void Vx(parm parm_, double k[D], Complex H[M*M]){
 
     double cx = parm_.t_i * c(k[0]);
+    H[0] = cx; H[1] = 0; H[2] = 0; H[3] = parm_.Ma * cx;
+
+}
+
+void Vxx(parm parm_, double k[D], Complex H[M*M]){
+
+    double cx = -parm_.t_i * s(k[0]);
     H[0] = cx; H[1] = 0; H[2] = 0; H[3] = parm_.Ma * cx;
 
 }
@@ -313,7 +323,7 @@ Ham::Ham(parm parm_,double k[D],int sw){
         H_mom_NH(parm_,k,H_k,VR_k,VR_b,VL_k,VL_b,E_NH);
         Vx(parm_,k,VX);
         Vy(parm_,k,VY);
-        //Vxx(parm_,k,VXX);
+        Vxx(parm_,k,VXX);
         //Vy(parm_,k,VY);
         //Vyx(parm_,k,VYX);
         //Vyxx(parm_,k,VYXX);

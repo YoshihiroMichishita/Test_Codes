@@ -19,6 +19,9 @@ void DC_transport_NRC(double dw, double w,double T,Ham Ham_,Green Green_,double&
 void Linear_transport_NH(double dw, double w,double T,Ham Ham_, double& XX, double& YX, double& YXXr, double& YXXr2, double& YXXi,
  double& YXXi2, double& XX_, double& YX_, double& YXXr_, double& YXXr2_, double& YXXi_, double& YXXi2_);
 
+void Linear_transport_NHwithNRC(double dw, double w,double T,Ham Ham_, double& XX, double& XXX, double& YXXr, double& YXXr2, double& YXXi,
+ double& YXXi2, double& XX_, double& XXX_, double& YXXr_, double& YXXr2_, double& YXXi_, double& YXXi2_);
+
 void Linear_transport_NH_NRC(double dw, double w,double T,Ham Ham_, double& XX, double& XXX, double& XX_, double& XXX_);
 
 void Opt_transport(parm parm_, double dw, double w,Ham Ham_,Green Green_,double& XX,double& XX2, double& PVYXi, double& div1, double& div2, double& div3);
