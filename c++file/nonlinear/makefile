@@ -8,8 +8,8 @@ LIB=-llapack -lblas -lgomp -lpthread -lm -ldl
 #CXX_FLAGS=-O3 -I$(INC) -L$(LIB)
 CXX_FLAGS=-O3 $(LIB)
 
-NAME=Dirac_BI
-MAIN=main_Dirac
+NAME=Dirac_BI_Green
+MAIN=main_DiracG2_mypc
 HAM=Ham_Dirac
 MATRIX=matrix_op_mypc
 PARM=parm_Dirac
