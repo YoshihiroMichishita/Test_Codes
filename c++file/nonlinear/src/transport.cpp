@@ -2,11 +2,13 @@
 
 using namespace std;
 
+//Fermi distribution function 
 double FD(double w, double T){
     double f = 1.0/(1.0+exp(w/T));
     return f;
 };
 
+//w-derivative of teh Fermi distribution function
 double dFD(double w, double T){
     double f;
     if(fabs(w/T)>10.0){
@@ -17,6 +19,7 @@ double dFD(double w, double T){
     }
     return f;
 };
+
 
 double ddFD(double w, double T){
     double f;
@@ -29,6 +32,7 @@ double ddFD(double w, double T){
     return f;
 };
 
+//spectral function A(k,w)
 double Spectral(parm parm_,double w, double k[D], double re[Mf], double im[Mf]){
     Complex G[M*M],H[M*M];
     H_mom(parm_,k,H);
@@ -37,6 +41,7 @@ double Spectral(parm parm_,double w, double k[D], double re[Mf], double im[Mf]){
     return A;
 };
 
+// Calculate linear transport and nonlnear Hall conductivity
 void DC_transport(double dw, double w,double T,Ham Ham_,Green Green_,double& XX, double& YX, double& YXXr, double& YXXr2, double& YXXi, double& YXXi2){
     Complex VXG[M*M],VYG[M*M],VYGG[M*M],VYGGG[M*M],VXGA[M*M];
     Prod2<M>(Ham_.VX,Green_.GR,VXG);
@@ -58,6 +63,7 @@ void DC_transport(double dw, double w,double T,Ham Ham_,Green Green_,double& XX,
     YXXi2 += 2.0 * dw * Trace_NHi<M>(MYXX2) * dFD(w,T); 
 };
 
+// Calculate linear transport and non-reciprcal conductivity
 void DC_transport_NRC(double dw, double w,double T,Ham Ham_,Green Green_,double& XX, double& XXXr, double& XXXr2, double& XXXi, double& XXXi2){
     Complex VXG[M*M],VXGG[M*M],VYGGG[M*M],VXGA[M*M];
     Prod2<M>(Ham_.VX,Green_.GR,VXG);
@@ -77,35 +83,86 @@ void DC_transport_NRC(double dw, double w,double T,Ham Ham_,Green Green_,double&
     XXXi2 += 2.0 * dw * Trace_NHi<M>(MXXX2) * dFD(w,T); 
 };
 
-void Linear_transport_NH(double dw, double w,double T,Ham Ham_, double& XX, double& YX, double& YXXr, double& YXXr2, double& YXXi,
+// Calculate linear transport, nonlnear Hall conductivity, and non-reciprcal conductivity
+void DC_NLH_NRC(double dw, double w,double T,Ham Ham_,Green Green_,double& XX, double& YX, double& XXXr, double& XXXr2, double& XXXi, double& XXXi2, double& YXXr, double& YXXr2, double& YXXi, double& YXXi2){
+    Complex VXG[M*M],VYG[M*M],VYGG[M*M],VXGG[M*M],VXGA[M*M];
+    Prod2<M>(Ham_.VX,Green_.GR,VXG);
+    Prod2<M>(Ham_.VY,Green_.GR,VYG);
+    Prod2<M>(Ham_.VX,Green_.dGR,VXGG);
+    Prod2<M>(Ham_.VY,Green_.dGR,VYGG);
+    Prod2<M>(Ham_.VX,Green_.GA,VXGA);
+
+    Complex MXX[M*M],MYX[M*M],MYXX1[M*M],MYXX[M*M],MYXX2[M*M];
+    Complex MXXX[M*M],MXXX2[M*M];
+    Prod3<M>(VXGG,VXG,VXGA,MXXX);
+    Prod3<M>(VXGG,Ham_.VXX,Green_.GA,MXXX2);
+    Prod2<M>(VXG,VXGA,MXX);
+    Prod2<M>(VYG,VXGA,MYX);
+    Prod3<M>(VYGG,VXG,VXGA,MYXX);
+
+    XX += dw * Trace_H<M>(MXX) * dFD(w,T);
+    YX += dw * Trace_NHi<M>(MYXX1) * dFD(w,T);
+    XXXi += 2.0 * dw * Trace_NHi<M>(MXXX) * dFD(w,T);
+    XXXr += 2.0 * dw * Trace_H<M>(MXXX) * dFD(w,T);
+    XXXr2 += 2.0 * dw * Trace_H<M>(MXXX2) * dFD(w,T);
+    XXXi2 += 2.0 * dw * Trace_NHi<M>(MXXX2) * dFD(w,T); 
+    YXXi += 2.0 * dw * Trace_NHi<M>(MYXX) * dFD(w,T);
+    YXXr += 2.0 * dw * Trace_H<M>(MYXX) * dFD(w,T);
+    YXXr2 += 2.0 * dw * Trace_H<M>(MYXX2) * dFD(w,T);
+    YXXi2 += 2.0 * dw * Trace_NHi<M>(MYXX2) * dFD(w,T); 
+};
+
+// Calculate linear transport and nonlnear Hall conductivity with non-Hermitian band-index
+void Linear_transport_NH(double dw, double w,double delta, double T,Ham Ham_, double& XX, double& YX, double& YXXr, double& YXXr2, double& YXXi,
  double& YXXi2, double& XX_, double& YX_, double& YXXr_, double& YXXr2_, double& YXXi_, double& YXXi2_){
     
     Complex GR[M],GA[M];
     for (int i = 0; i < M; i++){
-        GR[i] = 1.0/(w - Ham_.E_NH[i]);
+        GR[i] = 1.0/(w - Ham_.E_NH[i]+I*delta);
         GA[i] = conj(GR[i]);
     }
     Complex YXX0=0,YXX0_=0,YXX1=0,YXX1_=0;
 
     for (int i = 0; i < M; i++){
         XX += dw * real(Ham_.VX_RR[i*(M+1)] * GR[i] * Ham_.VX_LL[i*(M+1)] * GA[i]) * dFD(w,T);
-        XX_ += dw * real( (Ham_.VR_b[M*i]*Ham_.VR_k[i] + Ham_.VR_b[M*i+1]*Ham_.VR_k[i+M]) * Ham_.VX_LR[i*(M+1)] * GR[i] * Ham_.VX_LR[i*(M+1)] * (Ham_.VL_b[M*i]*Ham_.VL_k[i] + Ham_.VL_b[M*i+1]*Ham_.VL_k[i+M]) * GA[i]) * dFD(w,T);
+        if(fabs(Ham_.NH_fac[0])<1000.0){
+            XX_ += dw * real( (Ham_.VR_b[M*i]*Ham_.VR_k[i] + Ham_.VR_b[M*i+1]*Ham_.VR_k[i+M]) * Ham_.VX_LR[i*(M+1)] * GR[i] * Ham_.VX_LR[i*(M+1)] * (Ham_.VL_b[M*i]*Ham_.VL_k[i] + Ham_.VL_b[M*i+1]*Ham_.VL_k[i+M]) * GA[i]) * dFD(w,T);
 
-        for (int j = 0; j < M; j++){
-            for (int l = 0; l < M; l++){
-                //all contribution
-                YX += -2.0 * dw * imag(Ham_.VY_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LL[l*M+j] * GA[j]) * dFD(w,T);
-                YX_ += -2.0 * dw * imag((Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
-                * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LR[l*M+j] * (Ham_.VL_b[M*j]*Ham_.VL_k[j] + Ham_.VL_b[M*j+1]*Ham_.VL_k[M+j]) * GA[j]) * dFD(w,T);
+            for (int j = 0; j < M; j++){
+                for (int l = 0; l < M; l++){
+                    //all contribution
+                    YX += -2.0 * dw * imag(Ham_.VY_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LL[l*M+j] * GA[j]) * dFD(w,T);
+                    YX_ += -2.0 * dw * imag((Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
+                    * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LR[l*M+j] * (Ham_.VL_b[M*j]*Ham_.VL_k[j] + Ham_.VL_b[M*j+1]*Ham_.VL_k[M+j]) * GA[j]) * dFD(w,T);
+                }
+                YXX0 += -2.0*dw * Ham_.VY_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+j] * GR[j] * Ham_.VX_LL[j*(M+1)] * GA[j] * dFD(w,T);
+                YXX0_ += -2.0*dw * (Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
+                    * Ham_.VX_LR[M*i+j] * GR[j] * Ham_.VX_LR[j*(M+1)] * (Ham_.VL_b[M*j]*Ham_.VL_k[j] + Ham_.VL_b[M*j+1]*Ham_.VL_k[M+j]) * GA[j] * dFD(w,T);
+                
+                YXX1 += -2.0*dw * Ham_.VY_RR[i+j*M] * GR[i] * GR[i] * Ham_.VXX_LL[j+M*i] * GA[j] * dFD(w,T);
+                YXX1_ += -2.0*dw * (Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
+                * Ham_.VXX_LR[M*i+j] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
             }
-            YXX0 += -2.0*dw * Ham_.VY_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+j] * GR[j] * Ham_.VX_LL[j*(M+1)] * GA[j] * dFD(w,T);
-            YXX0_ += -2.0*dw * (Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
-                * Ham_.VX_LR[M*i+j] * GR[j] * Ham_.VX_LR[j*(M+1)] * (Ham_.VL_b[M*j]*Ham_.VL_k[j] + Ham_.VL_b[M*j+1]*Ham_.VL_k[M+j]) * GA[j] * dFD(w,T);
-            
-            YXX1 += -2.0*dw * Ham_.VY_RR[i+j*M] * GR[i] * GR[i] * Ham_.VXX_LL[j+M*i] * GA[j] * dFD(w,T);
-            YXX1_ += -2.0*dw * (Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
-             * Ham_.VXX_LR[M*i+j] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
         }
+        else{
+            XX_ += dw * real(Ham_.VX_RR[i*(M+1)] * GR[i] * Ham_.VX_LL[i*(M+1)] * GA[i]) * dFD(w,T);
+
+            for (int j = 0; j < M; j++){
+                for (int l = 0; l < M; l++){
+                    //all contribution
+                    double QQ = -2.0 * dw * imag(Ham_.VY_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LL[l*M+j] * GA[j]) * dFD(w,T);
+                    YX += QQ;
+                    YX_ += QQ;
+                }
+                Complex PP1 = -2.0*dw * Ham_.VY_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+j] * GR[j] * Ham_.VX_LL[j*(M+1)] * GA[j] * dFD(w,T);
+                YXX0 += PP1;
+                YXX0_ += PP1;
+                Complex PP2 = -2.0*dw * Ham_.VY_RR[i+j*M] * GR[i] * GR[i] * Ham_.VXX_LL[j+M*i] * GA[j] * dFD(w,T);
+                YXX1 += PP2;
+                YXX1_ += PP2;
+            }
+        }
+            
         
     }
     YXXi += imag(YXX0);
@@ -118,38 +175,39 @@ void Linear_transport_NH(double dw, double w,double T,Ham Ham_, double& XX, doub
     YXXr2_ += real(YXX1_);
 };
 
-
-void Linear_transport_NHwithNRC(double dw, double w,double T,Ham Ham_, double& XX, double& XXX, double& YXXr, double& YXXr2, double& YXXi,
- double& YXXi2, double& XX_, double& XXX_, double& YXXr_, double& YXXr2_, double& YXXi_, double& YXXi2_){
+// Calculate linear transport, nonlnear Hall conductivity, and non-reciprcal conductivity with non-Hermitian band-index
+void Linear_transport_NHwithNRC(parm parm_,double dw, double w,double T,Ham Ham_, double& XX, double& XXX, double& XXX2, double& YXXr, double& YXXr2, double& YXXi, double& YXXi2, double& XX_, double& XXX_, double& XXX2_, double& YXXr_, double& YXXr2_, double& YXXi_, double& YXXi2_){
     
     Complex GR[M],GA[M];
     for (int i = 0; i < M; i++){
-        GR[i] = 1.0/(w - Ham_.E_NH[i]);
+        GR[i] = 1.0/(w - Ham_.E_NH[i]+I*parm_.delta);
         GA[i] = conj(GR[i]);
     }
     Complex YXX0=0,YXX0_=0,YXX1=0,YXX1_=0;
-    Complex XXX0=0,XXX0_=0,XXX1=0,XXX1_=0,XXX2=0,XXX2_=0;
+    Complex XXX0=0,XXX0_=0,XXX1=0,XXX1_=0;
 
     for (int i = 0; i < M; i++){
-        XX += dw * real(Ham_.VX_RR[i*(M+1)] * GR[i] * Ham_.VX_LL[i*(M+1)] * GA[i]) * dFD(w,T);
+        
         XX_ += dw * real( (Ham_.VR_b[M*i]*Ham_.VR_k[i] + Ham_.VR_b[M*i+1]*Ham_.VR_k[i+M]) * Ham_.VX_LR[i*(M+1)] * GR[i] * Ham_.VX_LR[i*(M+1)] * (Ham_.VL_b[M*i]*Ham_.VL_k[i] + Ham_.VL_b[M*i+1]*Ham_.VL_k[i+M]) * GA[i]) * dFD(w,T);
 
         for (int j = 0; j < M; j++){
-
-            XXX0 += dw * Ham_.VX_RR[i+j*M] * GR[i] * GR[i] * Ham_.VX_LR[j+M*i] * GR[j] * Ham_.VX_LL[j*(M+1)] * GA[j] * dFD(w,T);
-            XXX0_ += dw * (Ham_.VR_b[j*M]*Ham_.VR_k[j] + Ham_.VR_b[j*M+1]*Ham_.VR_k[j+M]) * Ham_.VX_LR[i+j*M] * GR[i] * GR[i] * Ham_.VX_LR[j+M*i] * GR[j] * Ham_.VX_LR[j*(M+1)] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
+            XX += dw * real(Ham_.VX_RR[j*M+i] * GR[i] * Ham_.VX_LL[i*M+j] * GA[j]) * dFD(w,T);
+            //XXX0 += dw * Ham_.VX_RR[i+j*M] * GR[i] * GR[i] * Ham_.VX_LR[j+M*i] * GR[j] * Ham_.VX_LL[j*(M+1)] * GA[j] * dFD(w,T);
+            //XXX0_ += dw * (Ham_.VR_b[j*M]*Ham_.VR_k[j] + Ham_.VR_b[j*M+1]*Ham_.VR_k[j+M]) * Ham_.VX_LR[i+j*M] * GR[i] * GR[i] * Ham_.VX_LR[j+M*i] * GR[j] * Ham_.VX_LR[j*(M+1)] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
             
-            XXX1 += dw * Ham_.VX_RR[i+j*M] * GR[i] * GR[i] * Ham_.VXX_LL[j+M*i] * GA[j] * dFD(w,T);
-            XXX1_ += dw * (Ham_.VR_b[j*M]*Ham_.VR_k[j] + Ham_.VR_b[j*M+1]*Ham_.VR_k[j+M]) * Ham_.VX_LR[i+j*M] * GR[i] * GR[i] * Ham_.VXX_LR[j+M*i] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
+            XXX1 += -dw * Ham_.VX_RR[i+j*M] * GR[i] * GR[i] * Ham_.VXX_LL[j+M*i] * GA[j] * dFD(w,T);
+            XXX1_ += -dw * (Ham_.VR_b[j*M]*Ham_.VR_k[j] + Ham_.VR_b[j*M+1]*Ham_.VR_k[j+M]) * Ham_.VX_LR[i+j*M] * GR[i] * GR[i] * Ham_.VXX_LR[j+M*i] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
 
             for (int l = 0; l < M; l++){
                 //all contribution
+                XXX0 += -dw * Ham_.VX_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LL[l*M+j] * GA[j] * dFD(w,T);
+                XXX0_ += -dw * (Ham_.VR_b[j*M]*Ham_.VR_k[j] + Ham_.VR_b[j*M+1]*Ham_.VR_k[j+M]) * Ham_.VX_LR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LR[l*M+j] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
                 if(j==l){
 
                 }
                 else{
-                    XXX2 += dw * Ham_.VX_RR[i+j*M] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LL[l*M+j] * GA[j] * dFD(w,T);
-                    XXX2_ += dw * (Ham_.VR_b[j*M]*Ham_.VR_k[j] + Ham_.VR_b[j*M+1]*Ham_.VR_k[j+M]) * Ham_.VX_LR[i+j*M] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LR[l*M+j] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
+                    YXX0 += -2.0*dw * Ham_.VY_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LL[l*M+j] * GA[j] * dFD(w,T);
+                    YXX0_ += -2.0*dw * (Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]* Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LR[l*M+j] * (Ham_.VL_b[M*j]*Ham_.VL_k[j] + Ham_.VL_b[M*j+1]*Ham_.VL_k[M+j]) * GA[j] * dFD(w,T);
                 }
                 //YX += -2.0 * dw * imag(Ham_.VY_RR[j*M+i] * GR[i] * GR[i] * Ham_.VX_LR[M*i+l] * GR[l] * Ham_.VX_LL[l*M+j] * GA[j]) * dFD(w,T);
                 //YX_ += -2.0 * dw * imag((Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
@@ -160,8 +218,7 @@ void Linear_transport_NHwithNRC(double dw, double w,double T,Ham Ham_, double& X
                 * Ham_.VX_LR[M*i+j] * GR[j] * Ham_.VX_LR[j*(M+1)] * (Ham_.VL_b[M*j]*Ham_.VL_k[j] + Ham_.VL_b[M*j+1]*Ham_.VL_k[M+j]) * GA[j] * dFD(w,T);
             
             YXX1 += -2.0*dw * Ham_.VY_RR[i+j*M] * GR[i] * GR[i] * Ham_.VXX_LL[j+M*i] * GA[j] * dFD(w,T);
-            YXX1_ += -2.0*dw * (Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i]
-             * Ham_.VXX_LR[M*i+j] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
+            YXX1_ += -2.0*dw * (Ham_.VR_b[M*j]*Ham_.VR_k[j] + Ham_.VR_b[M*j+1]*Ham_.VR_k[j+M]) * Ham_.VY_LR[j*M+i] * GR[i] * GR[i] * Ham_.VXX_LR[M*i+j] * (Ham_.VL_b[j*M]*Ham_.VL_k[j] + Ham_.VL_b[j*M+1]*Ham_.VL_k[j+M]) * GA[j] * dFD(w,T);
         }
         
     }
@@ -173,10 +230,13 @@ void Linear_transport_NHwithNRC(double dw, double w,double T,Ham Ham_, double& X
     YXXr2 += real(YXX1);
     YXXi2_ += imag(YXX1_);
     YXXr2_ += real(YXX1_);
-    XXX += imag(XXX0+XXX1+XXX2);
-    XXX_ += imag(XXX0_+XXX1_+XXX2_);
+    XXX += imag(XXX0);
+    XXX2 += imag(XXX1);
+    XXX_ += imag(XXX0_);
+    XXX2_ += imag(XXX1_);
 };
 
+// Calculate linear transport and non-reciprcal conductivity with non-Hermitian band-index
 void Linear_transport_NH_NRC(double dw, double w,double T,Ham Ham_, double& XX, double& XXX, double& XX_, double& XXX_){
     Complex GR[M],GA[M];
     for (int i = 0; i < M; i++){
@@ -215,6 +275,7 @@ void Linear_transport_NH_NRC(double dw, double w,double T,Ham Ham_, double& XX, 
     XXX_ += imag(XXX0_+XXX1_+XXX2_);
 };
 
+// Calculate linear optical conductivity and photo-galvaic conductivity with Green function
 void Opt_transport(parm parm_, double dw, double w,Ham Ham_,Green Green_,double& XX, double& PVYXi, double& div1, double& div2, double& div3){
 
     Complex VXG[M*M],VYG[M*M],VYXG[M*M],VXGP[M*M],VXGM[M*M],VYGP[M*M],VYGM[M*M],VXGA[M*M],VYGA[M*M],VXGAP[M*M],
@@ -482,7 +543,6 @@ void Opt_RTA_transport_BI4(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], 
 
 };
 
-
 void Opt_Green_transport_BI(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], double Inj_[3] ,double Inj2_[3]){
     
     double dw = 2*parm_.W_MAX/parm_.W_SIZE;
@@ -503,86 +563,31 @@ void Opt_Green_transport_BI(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3],
                 }
                 else{                    
 
-                    Complex A0 = I*parm_.delta*(FD(w+parm_.W,parm_.T)-FD(w,parm_.T))/((w-Ham_.EN[i])*(w-Ham_.EN[i])+parm_.delta*parm_.delta)/((w+parm_.W-Ham_.EN[i])*(w+parm_.W-Ham_.EN[j])+parm_.delta*parm_.delta)/(-parm_.W*parm_.W);
+                    Complex A0 = I*parm_.delta*(FD(w+parm_.W,parm_.T)-FD(w,parm_.T))/((w-Ham_.EN[i])*(w-Ham_.EN[i])+parm_.delta*parm_.delta)/((w+parm_.W-Ham_.EN[j])*(w+parm_.W-Ham_.EN[j])+parm_.delta*parm_.delta)/(-parm_.W*parm_.W);
 
-                    Complex A1 = FD(w,parm_.T)/((w-Ham_.EN[i]+I*parm_.delta)*(w-Ham_.EN[i]+I*parm_.delta))/(w+parm_.W-Ham_.EN[j]+I*parm_.delta)/(-parm_.W*parm_.W);
+                    //Complex A1 = FD(w,parm_.T)/((w-Ham_.EN[i]+I*parm_.delta)*(w-Ham_.EN[i]+I*parm_.delta))/(w+parm_.W-Ham_.EN[j]+I*parm_.delta)/(-parm_.W*parm_.W);
 
-                    Complex B0 = I*parm_.delta*(FD(w-parm_.W,parm_.T)-FD(w,parm_.T))/((w-Ham_.EN[i])*(w-Ham_.EN[i])+parm_.delta*parm_.delta)/((w-parm_.W-Ham_.EN[i])*(w-parm_.W-Ham_.EN[j])+parm_.delta*parm_.delta)/(-parm_.W*parm_.W);
+                    Complex A1 = 0; Complex B1 = 0;
+                    Complex B0 = I*parm_.delta*(FD(w-parm_.W,parm_.T)-FD(w,parm_.T))/((w-Ham_.EN[i])*(w-Ham_.EN[i])+parm_.delta*parm_.delta)/((w-parm_.W-Ham_.EN[j])*(w-parm_.W-Ham_.EN[j])+parm_.delta*parm_.delta)/(-parm_.W*parm_.W);
 
-                    Complex B1 = FD(w,parm_.T)/((w-Ham_.EN[i]+I*parm_.delta)*(w-Ham_.EN[i]+I*parm_.delta))/(w-parm_.W-Ham_.EN[j]+I*parm_.delta)/(-parm_.W*parm_.W);
+                    //Complex B1 = FD(w,parm_.T)/((w-Ham_.EN[i]+I*parm_.delta)*(w-Ham_.EN[i]+I*parm_.delta))/(w-parm_.W-Ham_.EN[j]+I*parm_.delta)/(-parm_.W*parm_.W);
 
                     Inj[2] += 2.0 * Ham_.VZ_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] * (A0 + A1) + 2.0 * Ham_.VZ_LR[i*(M+1)] * Ham_.VY_LR[i*M+j] * Ham_.VX_LR[j*M+i] * (B0 + B1);
 
                     Inj[0] += 2.0 * Ham_.VX_LR[i*(M+1)] * Ham_.VY_LR[i*M+j] * Ham_.VZ_LR[j*M+i] * (A0 + A1) + 2.0 * Ham_.VX_LR[i*(M+1)] * Ham_.VZ_LR[i*M+j] * Ham_.VY_LR[j*M+i] * (B0 + B1);
 
                     Inj[1] += 2.0 * Ham_.VY_LR[i*(M+1)] * Ham_.VZ_LR[i*M+j] * Ham_.VX_LR[j*M+i] * (A0 + A1) + 2.0 * Ham_.VY_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VZ_LR[j*M+i] * (B0 + B1);
-
-                    //Inj2[2] += 2.0 * Ham_.VZ_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] * FD(w,parm_.T) *2.0*(1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta)) / (w-Ham_.EN[i]+I*parm_.delta)/(Ham_.EN[j]-Ham_.EN[i]+I*parm_.delta) / (-parm_.W*parm_.W);
-
-                    //Inj2[0] += 2.0 * Ham_.VY_LR[i*(M+1)] * Ham_.VZ_LR[i*M+j] * Ham_.VX_LR[j*M+i] * FD(w,parm_.T) *2.0*(1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta)) / (w-Ham_.EN[i]+I*parm_.delta)/(Ham_.EN[j]-Ham_.EN[i]+I*parm_.delta) / (-parm_.W*parm_.W);
-
-                    //Inj2[1] += 2.0 * Ham_.VX_LR[i*(M+1)] * Ham_.VY_LR[i*M+j] * Ham_.VZ_LR[j*M+i] * FD(w,parm_.T) *2.0*(1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta)) / (w-Ham_.EN[i]+I*parm_.delta)/(Ham_.EN[j]-Ham_.EN[i]+I*parm_.delta) / (-parm_.W*parm_.W);
-
-                    //BCD[0] += (Ham_.VY_LR[i*M+j]*Ham_.VX_LR[j*M+i]-Ham_.VX_LR[i*M+j]*Ham_.VY_LR[j*M+i])*Ham_.VX_LR[i*(M+1)] * FD(w,parm_.T) *((1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta))*(1.0/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[j] + I*parm_.delta) + 1.0/(w-parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-parm_.W-Ham_.EN[j] + I*parm_.delta) )+ (1.0/(w-Ham_.EN[j]+I*parm_.delta)-1.0/(w-Ham_.EN[j]-I*parm_.delta))/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[i]-I*parm_.delta) );
-                    
-                    //BCD[1] += (Ham_.VX_LR[i*M+j]*Ham_.VY_LR[j*M+i]-Ham_.VY_LR[i*M+j]*Ham_.VX_LR[j*M+i])*Ham_.VY_LR[i*(M+1)] * FD(w,parm_.T) *((1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta))*(1.0/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[j] + I*parm_.delta) + 1.0/(w-parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-parm_.W-Ham_.EN[j] + I*parm_.delta) )+ (1.0/(w-Ham_.EN[j]+I*parm_.delta)-1.0/(w-Ham_.EN[j]-I*parm_.delta))/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[i]-I*parm_.delta) );
-
-                    //BCD[2] += (Ham_.VZ_LR[i*M+j]*Ham_.VX_LR[j*M+i]-Ham_.VX_LR[i*M+j]*Ham_.VZ_LR[j*M+i])*Ham_.VZ_LR[i*(M+1)] * FD(w,parm_.T) *((1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta))*(1.0/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[j] + I*parm_.delta) + 1.0/(w-parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-parm_.W-Ham_.EN[j] + I*parm_.delta) )+ (1.0/(w-Ham_.EN[j]+I*parm_.delta)-1.0/(w-Ham_.EN[j]-I*parm_.delta))/(w+parm_.W-Ham_.EN[i] + I*parm_.delta)/(w-Ham_.EN[i]-I*parm_.delta) );
                 }
             }
         }
 
         //DrudeL_ += dw * real(DrudeL)/(2.0*pi);
         for (int i = 0; i < 3; i++){
-            Inj_[i] += dw * imag(Inj[i])/(2.0*pi);
+            Inj_[i] += dw * real(Inj[i])/(2.0*pi);
             //Inj2_[i] += dw * imag(Inj2[i])/(2.0*pi);
             //BCD_[i] += dw * imag(BCD[i])/(2.0*pi);
         }
     } 
-};
-
-void Opt_Green_transport_BI2(parm parm_,Ham Ham_,double w,double dw, double& DrudeL_, double Inj_[3], double Inj1_[3]){
-    Complex DrudeL = 0;
-    Complex Inj[3]={0,0,0},Inj1[3]={0,0,0};
-    for (int i = 0; i < M; i++){
-        DrudeL += Ham_.VX_LR[i*(M+1)]/((w -Ham_.EN[i])*(w -Ham_.EN[i])- (parm_.W+I*parm_.delta)*(parm_.W+I*parm_.delta))* Ham_.VX_LR[i*(M+1)]*(1.0/(w -Ham_.EN[i]+I*parm_.delta)-1.0/(w -Ham_.EN[i]-I*parm_.delta))* FD(w,parm_.T);
-
-        //Drude += 4.0* (Ham_.VY_LR[i*(M+1)]*Ham_.VX_LR[i*(M+1)]*Ham_.VX_LR[i*(M+1)]* ddFD(Ham_.EN[i],parm_.T) )/(-parm_.W*parm_.W-parm_.delta*parm_.delta);
-
-        for (int j = 0; j < M; j++){
-            if(i==j){
-            }
-            else{                    
-
-                Complex A0 = I*parm_.delta*(FD(w+parm_.W,parm_.T)-FD(w,parm_.T))/((w-Ham_.EN[i])*(w-Ham_.EN[i])+parm_.delta*parm_.delta)/((w+parm_.W-Ham_.EN[j])*(w+parm_.W-Ham_.EN[j])+parm_.delta*parm_.delta)/(-parm_.W*parm_.W);
-
-                Complex A1 = FD(w,parm_.T)/((w-Ham_.EN[i]+I*parm_.delta)*(w-Ham_.EN[i]+I*parm_.delta))/(w+parm_.W-Ham_.EN[j]+I*parm_.delta)/(-parm_.W*parm_.W);
-
-                Complex B0 = I*parm_.delta*(FD(w-parm_.W,parm_.T)-FD(w,parm_.T))/((w-Ham_.EN[i])*(w-Ham_.EN[i])+parm_.delta*parm_.delta)/((w-parm_.W-Ham_.EN[j])*(w-parm_.W-Ham_.EN[j])+parm_.delta*parm_.delta)/(-parm_.W*parm_.W);
-
-                Complex B1 = FD(w,parm_.T)/((w-Ham_.EN[i]+I*parm_.delta)*(w-Ham_.EN[i]+I*parm_.delta))/(w-parm_.W-Ham_.EN[j]+I*parm_.delta)/(-parm_.W*parm_.W);
-
-                Inj[2] += 2.0 * Ham_.VZ_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] * (A0) + 2.0 * Ham_.VZ_LR[i*(M+1)] * Ham_.VY_LR[i*M+j] * Ham_.VX_LR[j*M+i] * (B0);
-
-                Inj[0] += 2.0 * Ham_.VX_LR[i*(M+1)] * Ham_.VY_LR[i*M+j] * Ham_.VZ_LR[j*M+i] * (A0) + 2.0 * Ham_.VX_LR[i*(M+1)] * Ham_.VZ_LR[i*M+j] * Ham_.VY_LR[j*M+i] * (B0);
-
-                Inj[1] += 2.0 * Ham_.VY_LR[i*(M+1)] * Ham_.VZ_LR[i*M+j] * Ham_.VX_LR[j*M+i] * (A0) + 2.0 * Ham_.VY_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VZ_LR[j*M+i] * (B0);
-
-                Inj1[2] += 2.0 * Ham_.VZ_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] * (A1) + 2.0 * Ham_.VZ_LR[i*(M+1)] * Ham_.VY_LR[i*M+j] * Ham_.VX_LR[j*M+i] * (B1);
-
-                Inj1[0] += 2.0 * Ham_.VX_LR[i*(M+1)] * Ham_.VY_LR[i*M+j] * Ham_.VZ_LR[j*M+i] * (A1) + 2.0 * Ham_.VX_LR[i*(M+1)] * Ham_.VZ_LR[i*M+j] * Ham_.VY_LR[j*M+i] * (B1);
-
-                Inj1[1] += 2.0 * Ham_.VY_LR[i*(M+1)] * Ham_.VZ_LR[i*M+j] * Ham_.VX_LR[j*M+i] * (A1) + 2.0 * Ham_.VY_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VZ_LR[j*M+i] * (B1);
-
-            }
-        }
-    }
-
-    //DrudeL_ += dw * real(DrudeL)/(2.0*pi);
-    for (int i = 0; i < 3; i++){
-        Inj_[i] += dw * imag(Inj[i])/(2.0*pi);
-        Inj1_[i] += dw * imag(Inj1[i])/(2.0*pi);
-    }
 };
 
 void Opt_Green_transport_BI_div(parm parm_,Ham Ham_,double w,double dk2, double div_[3]){
@@ -597,4 +602,37 @@ void Opt_Green_transport_BI_div(parm parm_,Ham Ham_,double w,double dk2, double 
     }
 };
 
+void Opt_IFS_BI(parm parm_, Ham Ham_, double& IFS_xxy, double& IFS_yxy){
+    for (int i = 0; i < M; i++){
+        for (int j = 0; j < M; j++){
+            if(i==j){
+            }
+            else{
+                double Del = Ham_.EN[i]-Ham_.EN[j];
+                Complex Gm = (Ham_.VX_LR[i+M*j]*Ham_.VY_LR[j+M*i] + Ham_.VY_LR[i+M*j]*Ham_.VX_LR[j+M*i])/(Del*Del + parm_.delta*parm_.delta);
+                IFS_xxy += real(Gm/((parm_.W - Del)*(parm_.W - Del) + parm_.delta*parm_.delta)*Ham_.VX_LR[i*(M+1)]*dFD(Ham_.EN[i],parm_.T));
+                IFS_yxy += real(Gm/((parm_.W - Del)*(parm_.W - Del) + parm_.delta*parm_.delta)*Ham_.VY_LR[i*(M+1)]*dFD(Ham_.EN[i],parm_.T));
+            }
+        }
+        
+    }
+    
+}
+/*
+void Opt_IFS_NH_BI(parm parm_, Ham Ham_, double& IFS_RA, double& IFS_RR, double& div1, double& div2){
+    for (int i = 0; i < M; i++){
+        for (int j = 0; j < M; j++){
+            if(i==j){
+            }
+            else{
+                double Del = Ham_.EN[i]-Ham_EN[j];
+            }
+        }
+        
+    }
+    
+}*/
 
+void Opt_Gyration_BI(parm parm_, Ham Ham_, double& gyro_xxy, double& gyro_yxy){
+    
+}

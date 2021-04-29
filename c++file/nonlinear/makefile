@@ -7,12 +7,13 @@ LIB=-llapack -lblas -lgomp -lpthread -lm -ldl
 #LIB=-Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl
 #CXX_FLAGS=-O3 -I$(INC) -L$(LIB)
 CXX_FLAGS=-O3 $(LIB)
-
-NAME=Dirac_BI_Green
-MAIN=main_DiracG2_mypc
-HAM=Ham_Dirac
+#NAME=test
+NAME=IFS_BI_test
+#MAIN=check_renorm
+MAIN=main_PT_BI
+HAM=Ham_PT
 MATRIX=matrix_op_mypc
-PARM=parm_Dirac
+PARM=parm_PT
 OMP=fopenmp
 
 ### make all

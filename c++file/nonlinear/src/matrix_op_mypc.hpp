@@ -211,7 +211,7 @@ void InPro_M(Complex vL[M*M], Complex H[M*M], Complex vR[M*M],Complex H_n[M*M]){
             H_n[k*M+l]=0;
             for (int i = 0; i < M; i++){
                 for (int j = 0; j < M; j++){
-                    H_n[k*M+l] += vL[k+M*i]*H[i*M+j]*vR[M*j+l];
+                    H_n[k*M+l] += conj(vL[k+M*i])*H[i*M+j]*vR[M*j+l];
                 }
             }
         }     

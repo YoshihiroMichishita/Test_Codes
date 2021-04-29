@@ -1,6 +1,6 @@
 //#include "matrix_op.hpp"
 //#include "Ham_TMD.hpp"
-#include "C3v_HSL.hpp"
+//#include "C3v_HSL.hpp"
 #include "transport.hpp"
 #include <iostream>
 #include <fstream>
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]){
         double XX=0,YX=0,YXXr=0,YXXr2=0,YXXi=0,YXXi2=0,XXX=0;
         double XX_=0,YX_=0,YXXr_=0,YXXr2_=0,YXXi_=0,YXXi2_=0,XXX_=0;
 
-        #pragma omp parallel for reduction(+: XX,XXX,XX_,XXX_)
+        #pragma omp parallel for num_threads(52) reduction(+: XX,XXX,XX_,XXX_)
         for (int WW = 0; WW < parm_.W_SIZE-1; WW++){
             //Green Green_(parm_,w[WW],dw,im,re,Ham_.H_k);
             Linear_transport_NH_NRC(dw,w[WW],parm_.T,Ham_,XX,XXX,XX_,XXX_);

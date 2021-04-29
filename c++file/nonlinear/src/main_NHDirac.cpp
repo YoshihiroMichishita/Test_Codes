@@ -89,7 +89,7 @@ int main(int argc, char* argv[]){
     
     //double ZZ = 1.0-(re[i05][0]-re[im05][0])/(w[i05]-w[im05]);
     cout << "=============================" << endl;
-    /out <<"calculating time " << time << "min. (" << time * 60 << " sec.) " << endl;
+    cout <<"calculating time " << time << "min. (" << time * 60 << " sec.) " << endl;
     cout << "n " << n << endl;
     cout << "Z " << parm_.alpha << endl;
     cout << "W " << parm_.W << endl;

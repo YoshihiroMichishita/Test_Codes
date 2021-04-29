@@ -16,7 +16,7 @@ void H_mom(parm parm_, double k[D], Complex H[M*M]){
 
     
     H[0] = s_z + parm_.mu; H[1] = s_x - I * s_y;
-    H[2] = s_x + I * s_y; H[3] = s_z + parm_.mu;
+    H[2] = s_x + I * s_y; H[3] = -s_z + parm_.mu;
 
 }
 
@@ -27,7 +27,7 @@ void H_mom_BI(parm parm_, double k[D], Complex H[M*M], Complex VR_k[M*M], Comple
 
     
     H[0] = s_z + parm_.mu; H[1] = s_x - I * s_y;
-    H[2] = s_x + I * s_y; H[3] = s_z + parm_.mu;
+    H[2] = s_x + I * s_y; H[3] = -s_z + parm_.mu;
 
     Diag_H<M>(H,VR_k,E);
     for (int i = 0; i < M*M; i++){
@@ -36,9 +36,9 @@ void H_mom_BI(parm parm_, double k[D], Complex H[M*M], Complex VR_k[M*M], Comple
 };
 
 void BI_Velocity(Complex Vx[M*M],Complex Vxx[M*M], Complex VR_k[M*M], Complex VL_b[M*M], Complex Vx_LR[M*M], Complex Vxx_LR[M*M]){
-    InPro_M<M>(VL_b,Vx,VR_k,Vx_LR);
+    Prod3<M>(VL_b,Vx,VR_k,Vx_LR);
     //InPro_M<M>(VL_b,Vy,VR_k,Vy_LR);
-    InPro_M<M>(VL_b,Vxx,VR_k,Vxx_LR);
+    Prod3<M>(VL_b,Vxx,VR_k,Vxx_LR);
     //InPro_M<M>(VL_b,Vyx,VR_k,Vyx_LR);
 };
 
@@ -46,11 +46,11 @@ void H_mom_NH(parm parm_, double k[D], Complex H[M*M], Complex VR_k[M*M], Comple
 
     double s_x = parm_.t_i * c(k[0]);
     double s_y = parm_.t_e * s(k[0]);
-    double s_z = parm_.a_d;
+    Complex s_z = parm_.a_d + I*parm_.NH;
 
     
-    H[0] = s_z + parm_.mu + I*parm_.NH - I*parm_.delta; H[1] = s_x - I * s_y;
-    H[2] = s_x + I * s_y; H[3] = s_z + parm_.mu - I*parm_.NH - I*parm_.delta;
+    H[0] = s_z + parm_.mu; H[1] = s_x - I * s_y;
+    H[2] = s_x + I * s_y; H[3] = -s_z + parm_.mu;
 
     Complex G[M*M];
     G[0] = H[0]; G[1] = H[1]; 
@@ -117,7 +117,7 @@ void Vx(parm parm_, double k[D], Complex H[M*M]){
 
     
     H[0] = s_z; H[1] = s_x - I * s_y;
-    H[2] = s_x + I * s_y; H[3] = s_z;   
+    H[2] = s_x + I * s_y; H[3] = -s_z;   
 
 }
 
@@ -129,7 +129,7 @@ void Vxx(parm parm_, double k[D], Complex H[M*M]){
 
     
     H[0] = s_z; H[1] = s_x - I * s_y;
-    H[2] = s_x + I * s_y; H[3] = s_z; 
+    H[2] = s_x + I * s_y; H[3] = -s_z; 
 
 }
 
@@ -145,7 +145,6 @@ void GreenR_mom(parm parm_, double w, double im[Mf], double re[Mf],Complex H[M*M
     for (int i = 0; i < Mf; i++){
         G0[(M-i)*M-1-i] += - re[Mf-i-1] - I * im[Mf-i-1]; 
     }
-    G0[0] += -I * parm_.NH; G0[3] += I * parm_.NH;
     inverse_NH<M>(G0,G);
 }
 
@@ -160,8 +159,7 @@ void dGreenR_mom(parm parm_, double w,double dw, double im[Mf], double re[Mf],Co
 
     for (int i = 0; i < Mf; i++){
         G0[(M-i)*M-1-i] += - re[Mf-i-1] - I * im[Mf-i-1]; 
-    }  
-    G0[0] += -I * parm_.NH; G0[3] += I * parm_.NH;
+    }
     inverse_NH<M>(G0,G1);
     for (int i = 0; i < M; i++){
         for (int j = 0; j < M; j++){
@@ -191,8 +189,7 @@ void GreenA_mom(parm parm_, double w, double im[Mf], double re[Mf],Complex H[M*M
 
     for (int i = 0; i < Mf; i++){
         G0[(M-i)*M-1-i] += - re[Mf-i-1] + I * im[Mf-i-1]; 
-    }  
-    G0[0] += I * parm_.NH; G0[3] += -I * parm_.NH;
+    }
     inverse_NH<M>(G0,G);
     
 }
@@ -215,7 +212,6 @@ void GreenR_mom_p(parm parm_,double w,double W,double im[Mf],double re[Mf],Compl
     for (int i = 0; i < Mf; i++){
         G0[(M-i)*M-1-i] += - re[Mf-i-1] - I * im[Mf-i-1]; 
     }
-    G0[0] += -I * parm_.NH; G0[3] += I * parm_.NH;
     inverse_NH<M>(G0,GRp);
 };
 
@@ -231,7 +227,6 @@ void GreenR_mom_m(parm parm_,double w,double W,double im[Mf],double re[Mf],Compl
     for (int i = 0; i < Mf; i++){
         G0[(M-i)*M-1-i] += - re[Mf-i-1] - I * im[Mf-i-1]; 
     }
-    G0[0] += -I * parm_.NH; G0[3] += I * parm_.NH;
     inverse_NH<M>(G0,GRm);
 };
 
@@ -247,7 +242,6 @@ void GreenA_mom_p(parm parm_,double w,double W,double im[Mf],double re[Mf],Compl
     for (int i = 0; i < Mf; i++){
         G0[(M-i)*M-1-i] += - re[Mf-i-1] + I * im[Mf-i-1]; 
     }
-    G0[0] += I * parm_.NH; G0[3] += -I * parm_.NH;
     inverse_NH<M>(G0,GAp);
 };
 
@@ -263,7 +257,6 @@ void GreenA_mom_m(parm parm_,double w,double W,double im[Mf],double re[Mf],Compl
     for (int i = 0; i < Mf; i++){
         G0[(M-i)*M-1-i] += - re[Mf-i-1] + I * im[Mf-i-1]; 
     }
-    G0[0] += I * parm_.NH; G0[3] += -I * parm_.NH;
     inverse_NH<M>(G0,GAm);
 };
 
@@ -279,7 +272,6 @@ void GreenR_mom_pp(parm parm_,double w,double W,double im[Mf],double re[Mf],Comp
     for (int i = 0; i < Mf; i++){
         G0[(M-i)*M-1-i] += - re[Mf-i-1] - I * im[Mf-i-1]; 
     }
-    G0[0] += -I * parm_.NH; G0[3] += I * parm_.NH;
     inverse_NH<M>(G0,GRpp);
 };
 
@@ -295,7 +287,6 @@ void GreenA_mom_mm(parm parm_,double w,double W,double im[Mf],double re[Mf],Comp
     for (int i = 0; i < Mf; i++){
         G0[(M-i)*M-1-i] += - re[Mf-i-1] + I * im[Mf-i-1]; 
     }
-    G0[0] += I * parm_.NH; G0[3] += -I * parm_.NH;
     inverse_NH<M>(G0,GAmm);
 };
 

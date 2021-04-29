@@ -44,7 +44,7 @@ class Ham{
         Complex VX[M*M],VY[M*M],VXX[M*M],VYX[M*M],VYXX[M*M];
         Complex VR_k[M*M],VL_b[M*M],VR_b[M*M],VL_k[M*M],E_NH[M];
         double EN[M];
-        Complex VX_LL[M*M],VX_LR[M*M],VX_RR[M*M],VXX_LL[M*M],VXX_LR[M*M],VY_RR[M*M],VY_LR[M*M],VYX_LR[M*M];
+        Complex VX_LL[M*M],VX_LR[M*M],VX_RR[M*M],VXX_LL[M*M],VXX_LR[M*M],VY_RR[M*M],VY_LR[M*M],VYX_LR[M*M],VZ_LR[M*M];
         double NH_fac[M];
         Ham();
         Ham(parm parm_, double k[D], int sw);

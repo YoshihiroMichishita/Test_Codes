@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Ham_Dirac.hpp"
+//#include "Ham_TiltedDirac.hpp"
+#include "Ham_PT.hpp"
+//#include "Ham_TMD.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -16,11 +18,12 @@ void DC_transport(double dw, double w,double T,Ham Ham_,Green Green_,double& XX,
 
 void DC_transport_NRC(double dw, double w,double T,Ham Ham_,Green Green_,double& XX, double& XXXr, double& XXXr2, double& XXXi, double& XXXi2);
 
-void Linear_transport_NH(double dw, double w,double T,Ham Ham_, double& XX, double& YX, double& YXXr, double& YXXr2, double& YXXi,
+void DC_NLH_NRC(double dw, double w,double T,Ham Ham_,Green Green_,double& XX, double& YX, double& XXXr, double& XXXr2, double& XXXi, double& XXXi2, double& YXXr, double& YXXr2, double& YXXi, double& YXXi2);
+
+void Linear_transport_NH(double dw, double w,double delta,double T,Ham Ham_, double& XX, double& YX, double& YXXr, double& YXXr2, double& YXXi,
  double& YXXi2, double& XX_, double& YX_, double& YXXr_, double& YXXr2_, double& YXXi_, double& YXXi2_);
 
-void Linear_transport_NHwithNRC(double dw, double w,double T,Ham Ham_, double& XX, double& XXX, double& YXXr, double& YXXr2, double& YXXi,
- double& YXXi2, double& XX_, double& XXX_, double& YXXr_, double& YXXr2_, double& YXXi_, double& YXXi2_);
+void Linear_transport_NHwithNRC(parm parm_,double dw, double w,double T,Ham Ham_, double& XX, double& XXX, double& XXX2, double& YXXr, double& YXXr2, double& YXXi, double& YXXi2, double& XX_, double& XXX_, double& XXX2_, double& YXXr_, double& YXXr2_, double& YXXi_, double& YXXi2_);
 
 void Linear_transport_NH_NRC(double dw, double w,double T,Ham Ham_, double& XX, double& XXX, double& XX_, double& XXX_);
 
@@ -31,6 +34,6 @@ void Opt_RTA_transport_BI2(parm parm_,Ham Ham_,double& DrudeL_ ,double& Drude_, 
 void Opt_RTA_transport_BI3(parm parm_,Ham Ham_,double Inj_[3]);
 void Opt_RTA_transport_BI4(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], double Inj_[3]);
 void Opt_Green_transport_BI(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], double Inj_[3] ,double Inj2_[3]);
-void Opt_Green_transport_BI2(parm parm_,Ham Ham_,double w,double dw, double& DrudeL_, double Inj_[3], double Inj1_[3]);
-
 void Opt_Green_transport_BI_div(parm parm_,Ham Ham_,double w,double dk2, double div_[3]);
+void Opt_IFS_BI(parm parm_, Ham Ham_, double& IFS_xxy, double& IFS_yxy);
+void Opt_Gyration_BI(parm parm_, Ham Ham_, double& gyro_xxy, double& gyro_yxy);

@@ -6,7 +6,7 @@
 #include <omp.h>
 
 using namespace std;
-
+typedef std::complex<double> Complex;
 
 int main(int argc, char* argv[]){
 

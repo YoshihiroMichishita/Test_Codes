@@ -32,15 +32,17 @@ void H_mom_BI(parm parm_, double k[D], Complex H[M*M], Complex VR_k[M*M], Comple
     H[2] = s_x + I * s_y; H[3] = -s_z + s_0;
 
     Diag_H<M>(H,VR_k,E);
-    for (int i = 0; i < M*M; i++){
-        VL_b[i] = conj(VR_k[i]);
+    for (int i = 0; i < M; i++){
+        for (int j = 0; j < M; j++){
+        VL_b[i*M+j] = conj(VR_k[j*M+i]);
+        }
     }
 };
 
 void BI_Velocity(Complex Vx[M*M],Complex Vy[M*M],Complex Vz[M*M], Complex VR_k[M*M], Complex VL_b[M*M], Complex Vx_LR[M*M], Complex Vy_LR[M*M], Complex Vz_LR[M*M]){
-    InPro_M<M>(VL_b,Vx,VR_k,Vx_LR);
-    InPro_M<M>(VL_b,Vy,VR_k,Vy_LR);
-    InPro_M<M>(VL_b,Vz,VR_k,Vz_LR);
+    Prod3<M>(VL_b,Vx,VR_k,Vx_LR);
+    Prod3<M>(VL_b,Vy,VR_k,Vy_LR);
+    Prod3<M>(VL_b,Vz,VR_k,Vz_LR);
 };
 
 void H_mom_NH(parm parm_, double k[D], Complex H[M*M], Complex VR_k[M*M], Complex VR_b[M*M], Complex VL_k[M*M],Complex VL_b[M*M],Complex E_NH[M]){
@@ -91,14 +93,6 @@ void H_mom_NH(parm parm_, double k[D], Complex H[M*M], Complex VR_k[M*M], Comple
 void NH_factor(Complex Vx[M*M],Complex Vxx[M*M], Complex VR_k[M*M], Complex VR_b[M*M], Complex VL_k[M*M],Complex VL_b[M*M]
     , Complex Vx_LL[M*M], Complex Vx_RR[M*M], Complex Vx_LR[M*M],Complex Vxx_LL[M*M],Complex Vxx_LR[M*M], double NH_fac[M]){
     
-    /*
-    InPro_M<M>(VL_b,Vx,VR_k,Vx_LR);
-    InPro_M<M>(VR_b,Vx,VR_k,Vx_RR);
-    InPro_M<M>(VL_b,Vx,VL_k,Vx_LL);
-    InPro_M<M>(VR_b,Vy,VR_k,Vy_RR);
-    InPro_M<M>(VL_b,Vy,VR_k,Vy_LR);
-    InPro_M<M>(VL_b,Vxx,VL_k,Vxx_LL);
-    InPro_M<M>(VL_b,Vxx,VR_k,Vxx_LR);*/
     Prod3<M>(VL_b,Vx,VR_k,Vx_LR);
     Prod3<M>(VR_b,Vx,VR_k,Vx_RR);
     Prod3<M>(VL_b,Vx,VL_k,Vx_LL);
@@ -333,6 +327,8 @@ Ham::Ham(parm parm_,double k[D],int sw){
     else if(sw==1){
         H_mom(parm_,k,H_k);
         Vx(parm_,k,VX);
+        Vy(parm_,k,VY);
+        Vz(parm_,k,VZ);
         //Vxx(parm_,k,VXX);
         //Vy(parm_,k,VY);
         //Vyx(parm_,k,VYX);

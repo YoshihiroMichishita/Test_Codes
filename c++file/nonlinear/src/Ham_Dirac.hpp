@@ -50,14 +50,6 @@ class Ham{
         ~Ham();
 };
 
-/*
-class transport{
-    public:
-        double Jx[2];
-        double Jyx[2];
-        double Jyxx[2];
-};
-*/
 
 class Green{
     public:
