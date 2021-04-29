@@ -428,7 +428,7 @@ void Opt_RTA_transport_BI(parm parm_,Ham Ham_,double& DrudeL_ ,double& Drude_, d
     Inj_ += real(Inj);
 
 };
-
+//Calculate Linear conductivity, non-reciprocal conductivity, Injection current, and nonlinear Hall effect with RDM methods under RTA 
 void Opt_RTA_transport_BI2(parm parm_,Ham Ham_,double& DrudeL_ ,double& Drude_, double& BCD_, double& Inj_){
     Complex Drude = 0;
     Complex DrudeL = 0;
@@ -460,7 +460,7 @@ void Opt_RTA_transport_BI2(parm parm_,Ham Ham_,double& DrudeL_ ,double& Drude_, 
     Inj_ += real(Inj);
 };
 
-//void Opt_RTA_transport_BI3(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], double Inj_[3]){
+//Calculate Injection current with RDM methods under RTA 
 void Opt_RTA_transport_BI3(parm parm_,Ham Ham_,double Inj_[3]){    
     //Complex DrudeL = 0;
     Complex Inj[3]={0,0,0};
@@ -500,7 +500,7 @@ void Opt_RTA_transport_BI3(parm parm_,Ham Ham_,double Inj_[3]){
 
 };
 
-
+//Calculate Linear conductivity, Injection current, and nonlinear Hall effect with RDM methods under RTA 
 void Opt_RTA_transport_BI4(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], double Inj_[3]){
     
     Complex DrudeL = 0;
@@ -543,6 +543,8 @@ void Opt_RTA_transport_BI4(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], 
 
 };
 
+
+//Calculate Linear conductivity, Injection current, and nonlinear Hall effect by Green function methods without non-Hermitian effect
 void Opt_Green_transport_BI(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], double Inj_[3] ,double Inj2_[3]){
     
     double dw = 2*parm_.W_MAX/parm_.W_SIZE;
@@ -555,8 +557,6 @@ void Opt_Green_transport_BI(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3],
         Complex BCD[3] ={0,0,0};
         for (int i = 0; i < M; i++){
             DrudeL += Ham_.VX_LR[i*(M+1)]/((w -Ham_.EN[i])*(w -Ham_.EN[i])- (parm_.W+I*parm_.delta)*(parm_.W+I*parm_.delta))* Ham_.VX_LR[i*(M+1)]*(1.0/(w -Ham_.EN[i]+I*parm_.delta)-1.0/(w -Ham_.EN[i]-I*parm_.delta))* FD(w,parm_.T);
-
-            //Drude += 4.0* (Ham_.VY_LR[i*(M+1)]*Ham_.VX_LR[i*(M+1)]*Ham_.VX_LR[i*(M+1)]* ddFD(Ham_.EN[i],parm_.T) )/(-parm_.W*parm_.W-parm_.delta*parm_.delta);
 
             for (int j = 0; j < M; j++){
                 if(i==j){
@@ -602,6 +602,8 @@ void Opt_Green_transport_BI_div(parm parm_,Ham Ham_,double w,double dk2, double 
     }
 };
 
+
+//Calculate intrinsic Fermi surface term with RDM methods under RTA
 void Opt_IFS_BI(parm parm_, Ham Ham_, double& IFS_xxy, double& IFS_yxy){
     for (int i = 0; i < M; i++){
         for (int j = 0; j < M; j++){
@@ -632,7 +634,8 @@ void Opt_IFS_NH_BI(parm parm_, Ham Ham_, double& IFS_RA, double& IFS_RR, double&
     }
     
 }*/
-
+/*
 void Opt_Gyration_BI(parm parm_, Ham Ham_, double& gyro_xxy, double& gyro_yxy){
     
 }
+*/
