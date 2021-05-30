@@ -7,10 +7,10 @@ LIB=-llapack -lblas -lgomp -lpthread -lm -ldl
 #LIB=-Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl
 #CXX_FLAGS=-O3 -I$(INC) -L$(LIB)
 CXX_FLAGS=-O3 $(LIB)
-#NAME=test
-NAME=IFS_BI_test
-#MAIN=check_renorm
-MAIN=main_PT_BI
+NAME=test_Ham
+#NAME=Gyro_BI_G_0528
+MAIN=Test_HamPT
+#MAIN=Gyro_PT_BI
 HAM=Ham_PT
 MATRIX=matrix_op_mypc
 PARM=parm_PT
@@ -21,6 +21,9 @@ all: $(NAME)
 
 $(NAME): $(OBJ)/$(MAIN).o $(OBJ)/transport.o $(OBJ)/$(HAM).o $(OBJ)/$(MATRIX).o $(OBJ)/$(PARM).o
 	$(CXX) -$(OMP) $(OBJ)/$(MAIN).o $(OBJ)/transport.o $(OBJ)/$(HAM).o $(OBJ)/$(MATRIX).o $(OBJ)/$(PARM).o $(CXX_FLAGS) -o $(NAME) 
+#$(NAME): $(OBJ)/$(MAIN).o $(OBJ)/$(HAM).o $(OBJ)/$(MATRIX).o $(OBJ)/$(PARM).o
+#	$(CXX) -$(OMP) $(OBJ)/$(MAIN).o $(OBJ)/$(HAM).o $(OBJ)/$(MATRIX).o $(OBJ)/$(PARM).o $(CXX_FLAGS) -o $(NAME)
+
 
 $(OBJ)/$(MAIN).o: $(SRC)/$(MAIN).cpp
 	$(CXX) -$(OMP) -c $(SRC)/$(MAIN).cpp -o $(OBJ)/$(MAIN).o $(CXX_FLAGS)

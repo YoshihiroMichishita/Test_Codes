@@ -36,4 +36,14 @@ void Opt_RTA_transport_BI4(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], 
 void Opt_Green_transport_BI(parm parm_,Ham Ham_,double& DrudeL_, double BCD_[3], double Inj_[3] ,double Inj2_[3]);
 void Opt_Green_transport_BI_div(parm parm_,Ham Ham_,double w,double dk2, double div_[3]);
 void Opt_IFS_BI(parm parm_, Ham Ham_, double& IFS_xxy, double& IFS_yxy);
+void Opt_IFS_Green(parm parm_, Ham Ham_, double& IFS_xxy, double& IFS_yxy);
+void Opt_IFS_Green_w(parm parm_, Ham Ham_,double w, double& IFS_xxy, double& IFS_yxy);
+void Opt_IFS_Green_w_div(parm parm_, Ham Ham_,double w, double& div_xxy, double& div_yxy);
+void Opt_IFS_Green_test(parm parm_, Ham Ham_, double& IFS_xxy, double& IFS_yxy);
+void Opt_IFS_Green_test2(parm parm_, Ham Ham_, double& IFS_xxy, double& IFS_yxy);
 void Opt_Gyration_BI(parm parm_, Ham Ham_, double& gyro_xxy, double& gyro_yxy);
+void Opt_Gyration_BI2(parm parm_, Ham Ham_, double& gyro_xxy);
+void Opt_Gyration_BI3(parm parm_, Ham Ham_, double& gyro_xxy, double& gyro_xxy_im);
+void Opt_Gyration_Green(parm parm_, Ham Ham_, double w, double& gyro_xxy, double& gyro_yxy);
+void Opt_Circular_Green(parm parm_, Ham Ham_,Green Green_,double w, double& PVCP1, double& PVCP2, double& PVCPWW, double& PVCP);
+void Opt_Circular_Green_BI(parm parm_,Ham Ham_,double w, double& PVCP1, double& PVCP);

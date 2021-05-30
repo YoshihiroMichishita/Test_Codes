@@ -14,7 +14,7 @@ class parm
     double t_i;
     double t_e;
     double delta;
-    double alpha;
+    double alpha=1.0;
     double a_R;
     double a_D;
     double mu;

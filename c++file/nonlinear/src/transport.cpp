@@ -428,6 +428,7 @@ void Opt_RTA_transport_BI(parm parm_,Ham Ham_,double& DrudeL_ ,double& Drude_, d
     Inj_ += real(Inj);
 
 };
+
 //Calculate Linear conductivity, non-reciprocal conductivity, Injection current, and nonlinear Hall effect with RDM methods under RTA 
 void Opt_RTA_transport_BI2(parm parm_,Ham Ham_,double& DrudeL_ ,double& Drude_, double& BCD_, double& Inj_){
     Complex Drude = 0;
@@ -612,14 +613,219 @@ void Opt_IFS_BI(parm parm_, Ham Ham_, double& IFS_xxy, double& IFS_yxy){
             else{
                 double Del = Ham_.EN[i]-Ham_.EN[j];
                 Complex Gm = (Ham_.VX_LR[i+M*j]*Ham_.VY_LR[j+M*i] + Ham_.VY_LR[i+M*j]*Ham_.VX_LR[j+M*i])/(Del*Del + parm_.delta*parm_.delta);
-                IFS_xxy += real(Gm/((parm_.W - Del)*(parm_.W - Del) + parm_.delta*parm_.delta)*Ham_.VX_LR[i*(M+1)]*dFD(Ham_.EN[i],parm_.T));
-                IFS_yxy += real(Gm/((parm_.W - Del)*(parm_.W - Del) + parm_.delta*parm_.delta)*Ham_.VY_LR[i*(M+1)]*dFD(Ham_.EN[i],parm_.T));
+                IFS_xxy += real(Gm/((parm_.W - Del)*(parm_.W - Del) + parm_.delta*parm_.delta)*Del*Ham_.VX_LR[i*(M+1)]*dFD(Ham_.EN[i],parm_.T));
+                IFS_yxy += real(Gm/((parm_.W - Del)*(parm_.W - Del) + parm_.delta*parm_.delta)*Del*Ham_.VY_LR[i*(M+1)]*dFD(Ham_.EN[i],parm_.T));
             }
         }
         
     }
     
 }
+
+//Calculate intrinsic Fermi surface term by the Green function methods without non-Hermitian effect
+void Opt_IFS_Green(parm parm_, Ham Ham_, double& IFS_xxy, double& IFS_yxy){
+    
+    double dw = 2*parm_.W_MAX/parm_.W_SIZE;
+    for (int ww = 0; ww < parm_.W_SIZE; ww++){
+        Complex IFS1_xxy=0;
+        Complex IFS2_xxy=0;
+        Complex IFS1_yxy=0;
+        Complex IFS2_yxy=0;
+        for (int i = 0; i < M; i++){
+            for (int j = 0; j < M; j++){
+                if(i==j){
+                }
+                else{
+                    double w = parm_.W_MAX * (ww -parm_.W_SIZE/2) * 2.0/parm_.W_SIZE;
+                    Complex GiR = 1.0/(w-Ham_.EN[i]+I*parm_.delta/2.0);
+                    Complex GiRp = 1.0/(w + parm_.W - Ham_.EN[i] + I*parm_.delta/2.0);
+                    Complex GjR = 1.0/(w-Ham_.EN[j]+I*parm_.delta/2.0);
+                    Complex GjRm = 1.0/(w - parm_.W - Ham_.EN[j] + I*parm_.delta/2.0);
+                    IFS1_xxy += FD(w,parm_.T) * (Ham_.VX_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i]
+                                                     *( GiR*GjRm*(GiR-conj(GiR)) + GiRp*(GjR-conj(GjR))*conj(GiRp) + conj(GiR)*conj(GjRm)*(GiR-conj(GiR)))
+                                                + Ham_.VX_LR[j*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] 
+                                                     * ( GjR*GiRp*(GjR-conj(GjR)) + GjRm*(GiR-conj(GiR))*conj(GjRm) + conj(GjR)*conj(GiRp)*(GjR-conj(GjR)) ) );
+
+                    IFS1_yxy += FD(w,parm_.T) * (Ham_.VY_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i]
+                                                     *( GiR*GjRm*(GiR-conj(GiR)) + GiRp*(GjR-conj(GjR))*conj(GiRp) + conj(GiR)*conj(GjRm)*(GiR-conj(GiR)))
+                                                + Ham_.VY_LR[j*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] 
+                                                     * ( GjR*GiRp*(GjR-conj(GjR)) + GjRm*(GiR-conj(GiR))*conj(GjRm) + conj(GjR)*conj(GiRp)*(GjR-conj(GjR)) ) );
+
+                    IFS2_xxy += FD(w,parm_.T) * (Ham_.VXX_LR[i*M+j] * Ham_.VY_LR[j*M+i] *( GjRm*(GiR-conj(GiR)) + (GjR-conj(GjR))*conj(GiRp) )
+                                                + Ham_.VYX_LR[j*M+i] * Ham_.VX_LR[i*M+j]  * ( GiRp*(GjR-conj(GjR)) + (GiR-conj(GiR))*conj(GjRm) ) );
+
+                    IFS2_yxy += FD(w,parm_.T) * (Ham_.VYX_LR[i*M+j] * Ham_.VY_LR[j*M+i] *( GjRm*(GiR-conj(GiR)) + (GjR-conj(GjR))*conj(GiRp) )
+                                                + Ham_.VYY_LR[j*M+i] * Ham_.VX_LR[i*M+j]  * ( GiRp*(GjR-conj(GjR)) + (GiR-conj(GiR))*conj(GjRm) ) );
+                    
+                }
+            }
+            
+        }
+        IFS_xxy += -dw * imag(IFS1_xxy) / (2*pi*(parm_.W*parm_.W+0.25*parm_.delta*parm_.delta));
+        IFS_yxy += -dw * imag(IFS1_yxy) / (2*pi*(parm_.W*parm_.W+0.25*parm_.delta*parm_.delta));
+    }
+    
+}
+
+void Opt_IFS_Green_w(parm parm_, Ham Ham_,double w, double& IFS_xxy, double& IFS_yxy){
+    
+    //double dw = 2*parm_.W_MAX/parm_.W_SIZE;
+    //for (int ww = 0; ww < parm_.W_SIZE; ww++){
+    Complex IFS1_xxy=0;
+    Complex IFS2_xxy=0;
+    Complex IFS1_yxy=0;
+    Complex IFS2_yxy=0;
+    for (int i = 0; i < M; i++){
+        for (int j = 0; j < M; j++){
+            if(i==j){
+            }
+            else{
+                //double w = parm_.W_MAX * (ww -parm_.W_SIZE/2) * 2.0/parm_.W_SIZE;
+                Complex GiR = 1.0/(w-Ham_.EN[i]+I*parm_.delta/2.0);
+                Complex GiRp = 1.0/(w + parm_.W - Ham_.EN[i] + I*parm_.delta/2.0);
+                Complex GjR = 1.0/(w-Ham_.EN[j]+I*parm_.delta/2.0);
+                Complex GjRm = 1.0/(w - parm_.W - Ham_.EN[j] + I*parm_.delta/2.0);
+                IFS1_xxy += FD(w,parm_.T) * (Ham_.VX_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i]
+                                                    *( GiR*GjRm*(GiR-conj(GiR)) + GiRp*(GjR-conj(GjR))*conj(GiRp) + conj(GiR)*conj(GjRm)*(GiR-conj(GiR)))
+                                            + Ham_.VX_LR[j*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] 
+                                                    * ( GjR*GiRp*(GjR-conj(GjR)) + GjRm*(GiR-conj(GiR))*conj(GjRm) + conj(GjR)*conj(GiRp)*(GjR-conj(GjR)) ) );
+
+                IFS1_yxy += FD(w,parm_.T) * (Ham_.VY_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i]
+                                                    *( GiR*GjRm*(GiR-conj(GiR)) + GiRp*(GjR-conj(GjR))*conj(GiRp) + conj(GiR)*conj(GjRm)*(GiR-conj(GiR)))
+                                            + Ham_.VY_LR[j*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] 
+                                                    * ( GjR*GiRp*(GjR-conj(GjR)) + GjRm*(GiR-conj(GiR))*conj(GjRm) + conj(GjR)*conj(GiRp)*(GjR-conj(GjR)) ) );
+
+                IFS2_xxy += FD(w,parm_.T) * (Ham_.VXX_LR[i*M+j] * Ham_.VY_LR[j*M+i] *( GjRm*(GiR-conj(GiR)) + (GjR-conj(GjR))*conj(GiRp) )
+                                            + Ham_.VYX_LR[j*M+i] * Ham_.VX_LR[i*M+j]  * ( GiRp*(GjR-conj(GjR)) + (GiR-conj(GiR))*conj(GjRm) ) );
+
+                IFS2_yxy += FD(w,parm_.T) * (Ham_.VYX_LR[i*M+j] * Ham_.VY_LR[j*M+i] *( GjRm*(GiR-conj(GiR)) + (GjR-conj(GjR))*conj(GiRp) )
+                                            + Ham_.VYY_LR[j*M+i] * Ham_.VX_LR[i*M+j]  * ( GiRp*(GjR-conj(GjR)) + (GiR-conj(GiR))*conj(GjRm) ) );
+                
+            }
+        }
+        
+    }
+    IFS_xxy += -imag(IFS1_xxy+IFS2_xxy) / (2*pi*(parm_.W*parm_.W));
+    IFS_yxy += -imag(IFS1_yxy+IFS2_yxy) / (2*pi*(parm_.W*parm_.W));
+    //}
+    
+}
+
+
+void Opt_IFS_Green_w_div(parm parm_, Ham Ham_,double w, double& div_xxy, double& div_yxy){
+    
+    //double dw = 2*parm_.W_MAX/parm_.W_SIZE;
+    //for (int ww = 0; ww < parm_.W_SIZE; ww++){
+    Complex div0_xxy=0;
+    Complex div0_yxy=0;
+    for (int i = 0; i < M; i++){
+
+        Complex GiR = 1.0/(w-Ham_.EN[i]+I*parm_.delta/2.0);
+        Complex GiRp = 1.0/(w + parm_.W - Ham_.EN[i] + I*parm_.delta/2.0);
+
+        div0_xxy += FD(w,parm_.T) * (Ham_.VX_LR[i*(M+1)] * Ham_.VYX_LR[i*M+i] *( (GiR-conj(GiR))*(GiR+conj(GiR)) )
+                                    + Ham_.VYXX_LR[i*M+i]  * (GiR-conj(GiR)) );
+
+        div0_yxy += FD(w,parm_.T) * (Ham_.VY_LR[i*(M+1)] * Ham_.VYX_LR[i*M+i] *( (GiR-conj(GiR))*(GiR+conj(GiR)) )
+                                    + Ham_.VYYX_LR[i*M+i]  * (GiR-conj(GiR)) );
+        
+    }
+    div_xxy += -imag(div0_xxy) / (2*pi*(parm_.W*parm_.W));
+    div_yxy += -imag(div0_yxy) / (2*pi*(parm_.W*parm_.W));
+    //}
+    
+}
+
+void Opt_IFS_Green_test(parm parm_, Ham Ham_, double& IFS_xxy, double& IFS_yxy){
+    
+    double dw = 2*parm_.W_MAX/parm_.W_SIZE;
+    for (int ww = 0; ww < parm_.W_SIZE; ww++){
+        Complex IFS1_xxy=0;
+        Complex IFS2_xxy=0;
+        Complex IFS1_yxy=0;
+        Complex IFS2_yxy=0;
+        for (int i = 0; i < M; i++){
+            for (int j = 0; j < M; j++){
+                if(i==j){
+                }
+                else{
+                    double w = parm_.W_MAX * (ww -parm_.W_SIZE/2) * 2.0/parm_.W_SIZE;
+                    double del = Ham_.EN[i] - Ham_.EN[j];
+                    Complex GiR = 1.0/(w-Ham_.EN[i]+I*parm_.delta/2.0);
+                    Complex GiRp = 1.0/(w + parm_.W - Ham_.EN[i] + I*parm_.delta/2.0);
+                    Complex GjR = 1.0/(w-Ham_.EN[j]+I*parm_.delta/2.0);
+                    Complex GjRm = 1.0/(w - parm_.W - Ham_.EN[j] + I*parm_.delta/2.0);
+                    IFS1_xxy += FD(w,parm_.T) * (Ham_.VX_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i]
+                                                     *( GiR*GjRm*(GiR-conj(GiR)) + GiRp*(GjR-conj(GjR))*conj(GiRp) + conj(GiR)*conj(GjRm)*(GiR-conj(GiR)))
+                                                + Ham_.VX_LR[j*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] 
+                                                     * ( GjR*GiRp*(GjR-conj(GjR)) + GjRm*(GiR-conj(GiR))*conj(GjRm) + conj(GjR)*conj(GiRp)*(GjR-conj(GjR)) ) )/(del*del+parm_.delta*parm_.delta/4.0);
+
+                    IFS1_yxy += FD(w,parm_.T) * (Ham_.VY_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i]
+                                                     *( GiR*GjRm*(GiR-conj(GiR)) + GiRp*(GjR-conj(GjR))*conj(GiRp) + conj(GiR)*conj(GjRm)*(GiR-conj(GiR)))
+                                                + Ham_.VY_LR[j*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] 
+                                                     * ( GjR*GiRp*(GjR-conj(GjR)) + GjRm*(GiR-conj(GiR))*conj(GjRm) + conj(GjR)*conj(GiRp)*(GjR-conj(GjR)) ) )/(del*del+parm_.delta*parm_.delta/4.0);
+
+                    IFS2_xxy += FD(w,parm_.T) * (Ham_.VXX_LR[i*M+j] * Ham_.VY_LR[j*M+i] *( GjRm*(GiR-conj(GiR)) + (GjR-conj(GjR))*conj(GiRp) )
+                                                + Ham_.VYX_LR[j*M+i] * Ham_.VX_LR[i*M+j]  * ( GiRp*(GjR-conj(GjR)) + (GiR-conj(GiR))*conj(GjRm) ) )/(del*del+parm_.delta*parm_.delta/4.0);
+
+                    IFS2_yxy += FD(w,parm_.T) * (Ham_.VYX_LR[i*M+j] * Ham_.VY_LR[j*M+i] *( GjRm*(GiR-conj(GiR)) + (GjR-conj(GjR))*conj(GiRp) )
+                                                + Ham_.VYY_LR[j*M+i] * Ham_.VX_LR[i*M+j]  * ( GiRp*(GjR-conj(GjR)) + (GiR-conj(GiR))*conj(GjRm) ) )/(del*del+parm_.delta*parm_.delta/4.0);
+                    
+                }
+            }
+            
+        }
+        IFS_xxy += -dw * imag(IFS1_xxy+IFS2_xxy) / (2*pi);
+        IFS_yxy += -dw * imag(IFS1_yxy+IFS2_yxy) / (2*pi);
+    }
+    
+}
+
+void Opt_IFS_Green_test2(parm parm_, Ham Ham_, double& IFS_xxy, double& IFS_yxy){
+    
+    double dw = 2*parm_.W_MAX/parm_.W_SIZE;
+    for (int ww = 0; ww < parm_.W_SIZE; ww++){
+        Complex IFS1_xxy=0;
+        Complex IFS2_xxy=0;
+        Complex IFS1_yxy=0;
+        Complex IFS2_yxy=0;
+        for (int i = 0; i < M; i++){
+            for (int j = 0; j < M; j++){
+                if(i==j){
+                }
+                else{
+                    double w = parm_.W_MAX * (ww -parm_.W_SIZE/2) * 2.0/parm_.W_SIZE;
+                    double del = Ham_.EN[i] - Ham_.EN[j];
+                    Complex GiR = 1.0/(w-Ham_.EN[i]+I*parm_.delta/2.0);
+                    Complex GiRp = 1.0/(w + parm_.W - Ham_.EN[i] + I*parm_.delta/2.0);
+                    Complex GjR = 1.0/(w-Ham_.EN[j]+I*parm_.delta/2.0);
+                    Complex GjRm = 1.0/(w - parm_.W - Ham_.EN[j] + I*parm_.delta/2.0);
+                    IFS1_xxy += FD(w,parm_.T) * (Ham_.VX_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i]
+                                                     *( GiR*GjRm*(GiR-conj(GiR)) + GiRp*(GjR-conj(GjR))*conj(GiRp) + conj(GiR)*conj(GjRm)*(GiR-conj(GiR)))
+                                                + Ham_.VX_LR[j*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] 
+                                                     * ( GjR*GiRp*(GjR-conj(GjR)) + GjRm*(GiR-conj(GiR))*conj(GjRm) + conj(GjR)*conj(GiRp)*(GjR-conj(GjR)) ) )/(del*del+parm_.delta*parm_.delta);
+
+                    IFS1_yxy += FD(w,parm_.T) * (Ham_.VY_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i]
+                                                     *( GiR*GjRm*(GiR-conj(GiR)) + GiRp*(GjR-conj(GjR))*conj(GiRp) + conj(GiR)*conj(GjRm)*(GiR-conj(GiR)))
+                                                + Ham_.VY_LR[j*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] 
+                                                     * ( GjR*GiRp*(GjR-conj(GjR)) + GjRm*(GiR-conj(GiR))*conj(GjRm) + conj(GjR)*conj(GiRp)*(GjR-conj(GjR)) ) )/(del*del+parm_.delta*parm_.delta);
+
+                    IFS2_xxy += FD(w,parm_.T) * (Ham_.VXX_LR[i*M+j] * Ham_.VY_LR[j*M+i] *( GjRm*(GiR-conj(GiR)) + (GjR-conj(GjR))*conj(GiRp) )
+                                                + Ham_.VYX_LR[j*M+i] * Ham_.VX_LR[i*M+j]  * ( GiRp*(GjR-conj(GjR)) + (GiR-conj(GiR))*conj(GjRm) ) )/(del*del+parm_.delta*parm_.delta);
+
+                    IFS2_yxy += FD(w,parm_.T) * (Ham_.VYX_LR[i*M+j] * Ham_.VY_LR[j*M+i] *( GjRm*(GiR-conj(GiR)) + (GjR-conj(GjR))*conj(GiRp) )
+                                                + Ham_.VYY_LR[j*M+i] * Ham_.VX_LR[i*M+j]  * ( GiRp*(GjR-conj(GjR)) + (GiR-conj(GiR))*conj(GjRm) ) )/(del*del+parm_.delta*parm_.delta);
+                    
+                }
+            }
+            
+        }
+        IFS_xxy += -dw * imag(IFS1_xxy+IFS2_xxy) / (2*pi);
+        IFS_yxy += -dw * imag(IFS1_yxy+IFS2_yxy) / (2*pi);
+    }
+    
+}
+
 /*
 void Opt_IFS_NH_BI(parm parm_, Ham Ham_, double& IFS_RA, double& IFS_RR, double& div1, double& div2){
     for (int i = 0; i < M; i++){
@@ -634,8 +840,205 @@ void Opt_IFS_NH_BI(parm parm_, Ham Ham_, double& IFS_RA, double& IFS_RR, double&
     }
     
 }*/
-/*
+
 void Opt_Gyration_BI(parm parm_, Ham Ham_, double& gyro_xxy, double& gyro_yxy){
+    for (int i = 0; i < M; i++){
+        for (int j = 0; j < M; j++){
+            if(i==j){
+            }
+            else{
+                double e_ij = Ham_.EN[i]-Ham_.EN[j];
+                Complex delvx_ij = Ham_.VX_LR[i*(M+1)] - Ham_.VX_LR[j*(M+1)];
+                Complex delvy_ij = Ham_.VY_LR[i*(M+1)] - Ham_.VY_LR[j*(M+1)];
+                double f_ij = FD(Ham_.EN[i],parm_.T) - FD(Ham_.EN[j],parm_.T);
+                double del = parm_.delta/((parm_.W-e_ij)*(parm_.W-e_ij) + parm_.delta*parm_.delta);
+                for (int l = 0; l < M; l++){
+                    double e_il = Ham_.EN[i]-Ham_.EN[l];
+                    double e_lj = Ham_.EN[l]-Ham_.EN[j];
+                    gyro_xxy += pi * real((-delvx_ij*Ham_.VX_LR[M*i+j]/(e_ij*e_ij+parm_.delta*parm_.delta) 
+                                             + e_ij*(Ham_.VXX_LR[M*i+j]
+                                                 + Ham_.VX_LR[M*i+l]*e_il*Ham_.VX_LR[M*l+j]/(e_il*e_il + parm_.delta*parm_.delta)
+                                                 -Ham_.VX_LR[M*i+l]*e_lj*Ham_.VX_LR[M*l+j]/(e_lj*e_lj + parm_.delta*parm_.delta) )/(e_ij*e_ij + parm_.delta*parm_.delta))
+                                            *Ham_.VY_LR[j*M+i]*(-e_ij)/(e_ij*e_ij + parm_.delta*parm_.delta)  ) *f_ij*del;
+
+                    gyro_xxy += pi * real( (delvx_ij*Ham_.VY_LR[M*i+j]/(e_ij*e_ij+parm_.delta*parm_.delta)
+                                            - e_ij*(Ham_.VYX_LR[M*i+j]
+                                                 + Ham_.VX_LR[M*i+l]*e_il*Ham_.VY_LR[M*l+j]/(e_il*e_il + parm_.delta*parm_.delta)
+                                                 -Ham_.VX_LR[M*i+l]*e_lj*Ham_.VY_LR[M*l+j]/(e_lj*e_lj + parm_.delta*parm_.delta) )/(e_ij*e_ij + parm_.delta*parm_.delta))
+                                            *Ham_.VX_LR[j*M+i]*(-e_ij)/(e_ij*e_ij + parm_.delta*parm_.delta) )*f_ij*del;
+
+                    gyro_yxy += pi * real((-delvy_ij*Ham_.VX_LR[M*i+j]/(e_ij*e_ij+parm_.delta*parm_.delta) 
+                                             + e_ij*(Ham_.VYX_LR[M*i+j]
+                                                 + Ham_.VY_LR[M*i+l]*e_il*Ham_.VX_LR[M*l+j]/(e_il*e_il + parm_.delta*parm_.delta)
+                                                 -Ham_.VY_LR[M*i+l]*e_lj*Ham_.VX_LR[M*l+j]/(e_lj*e_lj + parm_.delta*parm_.delta) )/(e_ij*e_ij + parm_.delta*parm_.delta))
+                                            *Ham_.VY_LR[j*M+i]*(-e_ij)/(e_ij*e_ij + parm_.delta*parm_.delta)  ) *f_ij*del;
+
+                    gyro_yxy += pi * real( (delvy_ij*Ham_.VY_LR[M*i+j]/(e_ij*e_ij+parm_.delta*parm_.delta)
+                                            - e_ij*(Ham_.VYY_LR[M*i+j]
+                                                 + Ham_.VY_LR[M*i+l]*e_il*Ham_.VY_LR[M*l+j]/(e_il*e_il + parm_.delta*parm_.delta)
+                                                 -Ham_.VY_LR[M*i+l]*e_lj*Ham_.VY_LR[M*l+j]/(e_lj*e_lj + parm_.delta*parm_.delta) )/(e_ij*e_ij + parm_.delta*parm_.delta))
+                                            *Ham_.VX_LR[j*M+i]*(-e_ij)/(e_ij*e_ij + parm_.delta*parm_.delta) )*f_ij*del;
+                }
+                
+            }
+        }
+    }
+}
+
+
+void Opt_Gyration_BI2(parm parm_, Ham Ham_, double& gyro_xxy){
+    for (int i = 0; i < M; i++){
+        for (int j = 0; j < M; j++){
+            if(i==j){
+            }
+            else{
+                double e_ij = Ham_.EN[i]-Ham_.EN[j];
+                Complex delvx_ij = Ham_.VX_LR[i*(M+1)] - Ham_.VX_LR[j*(M+1)];
+                Complex delvy_ij = Ham_.VY_LR[i*(M+1)] - Ham_.VY_LR[j*(M+1)];
+                double f_ij = FD(Ham_.EN[i],parm_.T) - FD(Ham_.EN[j],parm_.T);
+                double del = parm_.delta/((parm_.W-e_ij)*(parm_.W-e_ij) + parm_.delta*parm_.delta);
+                double delm = parm_.delta/((-parm_.W-e_ij)*(-parm_.W-e_ij) + parm_.delta*parm_.delta);
+                gyro_xxy += real(Ham_.VXX_LR[i*M+j]*Ham_.VY_LR[j*M+i]/(e_ij*e_ij + parm_.delta*parm_.delta)) *f_ij*del;
+
+                gyro_xxy += real(Ham_.VYX_LR[i*M+j]*Ham_.VX_LR[j*M+i]/(e_ij*e_ij + parm_.delta*parm_.delta)) *f_ij*delm;
+                
+            }
+        }
+    }
+}
+
+void Opt_Gyration_BI3(parm parm_, Ham Ham_, double& gyro_xxy, double& gyro_xxy_im){
+    gyro_xxy = 0;
+    for (int i = 0; i < M; i++){
+        for (int j = 0; j < M; j++){
+            //if(i==j){
+            //}
+            //else{
+                double e_ij = Ham_.EN[i]-Ham_.EN[j];
+                //Complex delvx_ij = Ham_.VX_LR[i*(M+1)] - Ham_.VX_LR[j*(M+1)];
+                //Complex delvy_ij = Ham_.VY_LR[i*(M+1)] - Ham_.VY_LR[j*(M+1)];
+                double f_ij = FD(Ham_.EN[i],parm_.T) - FD(Ham_.EN[j],parm_.T);
+                double del = parm_.delta/((parm_.W+e_ij)*(parm_.W+e_ij) + parm_.delta*parm_.delta);
+                double delm = parm_.delta/((-parm_.W+e_ij)*(-parm_.W+e_ij) + parm_.delta*parm_.delta);
+                Complex deli = 1.0/((parm_.W+e_ij) + I*parm_.delta);
+                Complex delmi = 1.0/((-parm_.W+e_ij) + I*parm_.delta);
+                gyro_xxy += real(Ham_.VXX_LR[i*M+j]*Ham_.VY_LR[j*M+i]/(parm_.W*parm_.W)) *f_ij*del;
+
+                gyro_xxy += real(Ham_.VYX_LR[i*M+j]*Ham_.VX_LR[j*M+i]/(parm_.W*parm_.W)) *f_ij*delm;
+                gyro_xxy_im += real(Ham_.VXX_LR[i*M+j]*Ham_.VY_LR[j*M+i]/(parm_.W*parm_.W)*deli) *f_ij;
+
+                gyro_xxy_im += real(Ham_.VYX_LR[i*M+j]*Ham_.VX_LR[j*M+i]/(parm_.W*parm_.W)*delmi) *f_ij;
+                
+            //}
+        }
+    }
+}
+
+void Opt_Gyration_Green(parm parm_, Ham Ham_, double w, double& gyro_xxy, double& gyro_yxy){
+    //double dw = 2*parm_.W_MAX/parm_.W_SIZE;
+    //for (int ww = 0; ww < parm_.W_SIZE; ww++){
+    Complex gyro1_xxy=0;
+    Complex gyro2_xxy=0;
+    Complex gyro1_yxy=0;
+    Complex gyro2_yxy=0;
+    for (int i = 0; i < M; i++){
+        for (int j = 0; j < M; j++){
+            if(i==j){
+            }
+            else{
+                //double w = parm_.W_MAX * (ww -parm_.W_SIZE/2) * 2.0/parm_.W_SIZE;
+                Complex GiR = 1.0/(w-Ham_.EN[i]+I*parm_.delta/2.0);
+                Complex GiRp = 1.0/(w + parm_.W - Ham_.EN[i] + I*parm_.delta/2.0);
+                Complex GjR = 1.0/(w-Ham_.EN[j]+I*parm_.delta/2.0);
+                Complex GjRm = 1.0/(w - parm_.W - Ham_.EN[j] + I*parm_.delta/2.0);
+                gyro1_xxy += FD(w,parm_.T) * (Ham_.VX_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i]
+                                                    *( GiR*GjRm*(GiR-conj(GiR)) + GiRp*(GjR-conj(GjR))*conj(GiRp) + conj(GiR)*conj(GjRm)*(GiR-conj(GiR)))
+                                            - Ham_.VX_LR[j*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] 
+                                                    * ( GjR*GiRp*(GjR-conj(GjR)) + GjRm*(GiR-conj(GiR))*conj(GjRm) + conj(GjR)*conj(GiRp)*(GjR-conj(GjR)) ) );
+
+                gyro1_yxy += FD(w,parm_.T) * (Ham_.VY_LR[i*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i]
+                                                    *( GiR*GjRm*(GiR-conj(GiR)) + GiRp*(GjR-conj(GjR))*conj(GiRp) + conj(GiR)*conj(GjRm)*(GiR-conj(GiR)))
+                                            - Ham_.VY_LR[j*(M+1)] * Ham_.VX_LR[i*M+j] * Ham_.VY_LR[j*M+i] 
+                                                    * ( GjR*GiRp*(GjR-conj(GjR)) + GjRm*(GiR-conj(GiR))*conj(GjRm) + conj(GjR)*conj(GiRp)*(GjR-conj(GjR)) ) );
+
+                gyro2_xxy += FD(w,parm_.T) * (Ham_.VXX_LR[i*M+j] * Ham_.VY_LR[j*M+i] *( GjRm*(GiR-conj(GiR)) + (GjR-conj(GjR))*conj(GiRp) )
+                                            - Ham_.VYX_LR[j*M+i] * Ham_.VX_LR[i*M+j]  * ( GiRp*(GjR-conj(GjR)) + (GiR-conj(GiR))*conj(GjRm) ) );
+
+                gyro2_yxy += FD(w,parm_.T) * (Ham_.VYX_LR[i*M+j] * Ham_.VY_LR[j*M+i] *( GjRm*(GiR-conj(GiR)) + (GjR-conj(GjR))*conj(GiRp) )
+                                            - Ham_.VYY_LR[j*M+i] * Ham_.VX_LR[i*M+j]  * ( GiRp*(GjR-conj(GjR)) + (GiR-conj(GiR))*conj(GjRm) ) );
+                
+            }
+        }
+        
+    }
+    gyro_xxy += -real(gyro1_xxy+gyro2_xxy) / (2*pi*(parm_.W*parm_.W));
+    gyro_yxy += -real(gyro1_yxy+gyro2_yxy) / (2*pi*(parm_.W*parm_.W));
+    //}
     
 }
-*/
+
+
+// Calculate photo-galvaic conductivity under circular polarized light with Green function
+void Opt_Circular_Green(parm parm_,Ham Ham_,Green Green_,double w, double& PVCP1, double& PVCP2, double& PVCPWW, double& PVCP){
+
+    double ff = FD(w,parm_.T);
+    Complex VXXGRP[M*M], VYGRA[M*M], VXXGRA[M*M], VYGAM[M*M], VXYGRM[M*M], VXGRA[M*M], VXYGRA[M*M], VXGAP[M*M];
+    Prod2<M>(Ham_.VXX,Green_.GRp,VXXGRP);
+    Prod2<M>(Ham_.VY, Green_.GRmA,VYGRA);
+    Prod2<M>(Ham_.VXX,Green_.GRmA,VXXGRA);
+    Prod2<M>(Ham_.VY, Green_.GAm,VYGAM);
+
+    Prod2<M>(Ham_.VYX,Green_.GRm,VXYGRM);
+    Prod2<M>(Ham_.VX, Green_.GRmA,VXGRA);
+    Prod2<M>(Ham_.VYX,Green_.GRmA,VXYGRA);
+    Prod2<M>(Ham_.VX, Green_.GAp,VXGAP);
+
+    Complex PV3_1[M*M], PV4_1[M*M],PV3_2[M*M], PV4_2[M*M];
+    Prod2<M>(VXXGRP, VYGRA, PV3_1);
+    Prod2<M>(VXXGRA, VYGAM, PV3_2);
+    Prod2<M>(VXYGRM, VXGRA, PV4_1);
+    Prod2<M>(VXYGRA, VXGAP, PV4_2);
+
+    Complex VXGR[M*M], VXGRM[M*M], VYGA[M*M], VXGRP[M*M];
+    Prod2<M>(Ham_.VX, Green_.GR, VXGR);
+    Prod2<M>(Ham_.VX, Green_.GRp, VXGRP);
+    Prod2<M>(Ham_.VX, Green_.GRm, VXGRM);
+    Prod2<M>(Ham_.VY, Green_.GA, VYGA);
+
+    Complex PV5_1[M*M], PV5_2[M*M], PV5_3[M*M];
+    Prod3<M>(VXGR, VXGRP, VYGRA, PV5_1);
+    Prod3<M>(VXGRM,VXGRA,VYGAM, PV5_2);
+    Prod3<M>(VXGRA, VXGAP, VYGA, PV5_3);
+    double ddk = 4.0 * pi * pi /(parm_.K_SIZE*parm_.K_SIZE);
+    //double ddw = 2.0 * parm_.W_MAX/parm_.W_SIZE; 
+    double pv1 = ff*ddk*(Trace_H<M>(PV3_1)+Trace_H<M>(PV3_2)+Trace_H<M>(PV4_1)+Trace_H<M>(PV4_2));
+    double pv2 = ff*ddk*(Trace_H<M>(PV5_1)+Trace_H<M>(PV5_2)+Trace_H<M>(PV5_3));
+    PVCP1 += pv1;
+    PVCP2 += pv2;
+    PVCPWW += pv1+pv2;
+    PVCP += (pv1+pv2)/(parm_.W*parm_.W);
+
+};
+
+void Opt_Circular_Green_BI(parm parm_,Ham Ham_,double w, double& PVCP1, double& PVCP){
+
+    double PV1 = 0;
+    double ddk = 4.0 * pi * pi /(parm_.K_SIZE*parm_.K_SIZE);
+    double ff = FD(w,parm_.T);
+    for (int i = 0; i < M; i++){
+        Complex GRPi = 1.0/(w+parm_.W-Ham_.EN[i]+I*parm_.delta);
+        Complex GRMi = 1.0/(w-parm_.W-Ham_.EN[i]+I*parm_.delta);
+        Complex GRmAi = 1.0/(w-Ham_.EN[i]+I*parm_.delta)-1.0/(w-Ham_.EN[i]-I*parm_.delta);
+        for (int j = 0; j < M; j++){
+            Complex GAPj = 1.0/(w+parm_.W-Ham_.EN[j]-I*parm_.delta);
+            Complex GAMj = 1.0/(w-parm_.W-Ham_.EN[j]-I*parm_.delta);
+            Complex GRmAj = 1.0/(w-Ham_.EN[j]+I*parm_.delta)-1.0/(w-Ham_.EN[j]-I*parm_.delta);
+            PV1 += real(Ham_.VXX_LR[j*M+i]*GRPi*Ham_.VY_LR[i*M+j]*GRmAj);
+            PV1 += real(Ham_.VXX_LR[j*M+i]*GRmAi*Ham_.VY_LR[i*M+j]*GAMj);
+            PV1 += real(Ham_.VYX_LR[j*M+i]*GRMi*Ham_.VX_LR[i*M+j]*GRmAj);
+            PV1 += real(Ham_.VYX_LR[j*M+i]*GRmAi*Ham_.VX_LR[i*M+j]*GAPj);
+        }
+    }
+    PVCP1 += ddk*ff*PV1;
+    PVCP += ddk*ff*PV1/(parm_.W*parm_.W);
+};
